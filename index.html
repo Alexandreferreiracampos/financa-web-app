@@ -557,16 +557,20 @@
                 select.value = this.state.selectedMonthIndex;
             },
 
-            renderData() {
-                if (!this.state.data || !this.state.data.meses) return;
-                const monthData = this.state.data.meses[this.state.selectedMonthIndex] || {};
-                this.renderSummary(monthData);
-                this.renderCategoryView('receitas', monthData.depositos);
-                this.renderCategoryView('gastos', monthData.gastos);
-                this.renderCategoryView('pendentes', monthData.pendentes);
-                this.renderCharts();
-                if (this.state.activeDetail) this.renderDetailView(this.state.activeDetail.type, this.state.activeDetail.category);
-            },
+	            renderData() {
+	                if (!this.state.data || !this.state.data.meses) return;
+	                const monthData = this.state.data.meses[this.state.selectedMonthIndex] || {};
+	                this.renderSummary(monthData);
+	                this.renderCategoryView('receitas', monthData.depositos);
+	                this.renderCategoryView('gastos', monthData.gastos);
+	                this.renderCategoryView('pendentes', monthData.pendentes);
+	                this.renderCharts();
+	                if (this.state.activeDetail) this.renderDetailView(this.state.activeDetail.type, this.state.activeDetail.category);
+	                
+	                // Reaplica a busca se houver algo digitado, mas sem trocar de aba
+	                const searchQuery = document.getElementById('searchInput').value;
+	                if (searchQuery) this.handleSearch(searchQuery, true);
+	            },
 
             renderSummary(monthData) {
                 const income = this.calculateTotal(monthData.depositos);
@@ -716,13 +720,13 @@
                 `).join('');
             },
 
-            async handleSearch(query) {
-                if (!query) { this.renderData(); return; }
-                const results = [];
-                const q = query.toLowerCase();
-                
-                // Busca apenas no mês selecionado
-                const mData = this.state.data.meses[this.state.selectedMonthIndex] || {};
+	            async handleSearch(query, skipTabSwitch = false) {
+	                if (!query) { if (!skipTabSwitch) this.renderData(); return; }
+	                const results = [];
+	                const q = query.toLowerCase();
+	                
+	                // Busca apenas no mês selecionado
+	                const mData = this.state.data.meses[this.state.selectedMonthIndex] || {};
 	                ['depositos', 'gastos', 'pendentes'].forEach(type => {
 	                    if (mData[type]?.categorias) {
 	                        Object.entries(mData[type].categorias).forEach(([cat, items]) => {
@@ -735,9 +739,9 @@
 	                        });
 	                    }
 	                });
-
-                const container = document.getElementById('resumoCategories');
-                this.switchTab('resumo');
+	
+	                const container = document.getElementById('resumoCategories');
+	                if (!skipTabSwitch) this.switchTab('resumo');
                 
                 if (results.length === 0) {
                     container.innerHTML = `<div style="text-align: center; padding: 20px; color: var(--text-secondary);">Nenhum resultado encontrado no mês de ${MONTHS[this.state.selectedMonthIndex]}.</div>`;
@@ -763,7 +767,7 @@
             setupEventListeners() {
                 document.getElementById('yearSelect').onchange = (e) => { this.state.selectedYear = e.target.value; this.loadYearData(); };
                 document.getElementById('monthSelect').onchange = (e) => { this.state.selectedMonthIndex = parseInt(e.target.value); this.renderData(); };
-                document.getElementById('searchInput').oninput = (e) => this.handleSearch(e.target.value);
+	                document.getElementById('searchInput').oninput = (e) => this.handleSearch(e.target.value, false);
                 
                 document.querySelectorAll('.tab-button').forEach(btn => {
                     btn.onclick = () => {
