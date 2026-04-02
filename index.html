@@ -258,7 +258,10 @@
             padding: 12px;
             box-shadow: var(--shadow);
             margin-bottom: 8px;
+            cursor: pointer;
+            transition: transform 0.1s;
         }
+        .transaction-item:active { transform: scale(0.98); }
 
         .transaction-header { display: flex; justify-content: space-between; align-items: flex-start; }
         .transaction-description { font-size: 14px; font-weight: 500; word-break: break-word; }
@@ -296,49 +299,81 @@
         .btn-primary { background: var(--primary); color: white; }
         .btn-cancel { background: var(--bg-secondary); color: var(--text); }
 
+        .hidden { display: none !important; }
+
         /* FAB */
         .fab {
-            position: fixed; bottom: 24px; right: 24px;
-            width: 56px; height: 56px; border-radius: 28px;
-            background: var(--primary); color: white; border: none;
-            font-size: 24px; box-shadow: var(--shadow-lg); cursor: pointer;
-            display: flex; justify-content: center; align-items: center; z-index: 90;
+            position: fixed;
+            bottom: 24px;
+            right: 24px;
+            width: 56px;
+            height: 56px;
+            background-color: var(--primary);
+            color: white;
+            border-radius: 50%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 24px;
+            box-shadow: 0 4px 12px rgba(16, 185, 129, 0.4);
+            cursor: pointer;
+            z-index: 90;
+            border: none;
         }
 
-        /* Loading & Toast */
-        #loadingOverlay {
-            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(255,255,255,0.8); display: flex; flex-direction: column;
-            justify-content: center; align-items: center; z-index: 3000;
-            visibility: hidden; opacity: 0; transition: 0.3s;
+        /* Toast */
+        .toast {
+            position: fixed;
+            top: 24px;
+            left: 50%;
+            transform: translateX(-50%) translateY(-100px);
+            background: var(--primary);
+            color: white;
+            padding: 12px 24px;
+            border-radius: 50px;
+            font-weight: 600;
+            z-index: 2000;
+            transition: 0.3s;
+            box-shadow: var(--shadow-lg);
         }
-        #loadingOverlay.active { visibility: visible; opacity: 1; }
-        .spinner { width: 40px; height: 40px; border: 4px solid var(--border); border-top: 4px solid var(--primary); border-radius: 50%; animation: spin 1s linear infinite; }
-        @keyframes spin { 100% { transform: rotate(360deg); } }
+        .toast.show { transform: translateX(-50%) translateY(0); }
 
-        #toast {
-            position: fixed; bottom: 100px; left: 50%; transform: translateX(-50%);
-            background: #333; color: white; padding: 10px 20px; border-radius: 50px;
-            font-size: 13px; z-index: 2000; opacity: 0; transition: 0.3s; pointer-events: none;
+        /* Loading */
+        .loading-overlay {
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(255,255,255,0.8);
+            display: flex; flex-direction: column; justify-content: center; align-items: center;
+            z-index: 3000; visibility: hidden; opacity: 0; transition: 0.3s;
         }
-        #toast.show { opacity: 1; }
+        .loading-overlay.active { visibility: visible; opacity: 1; }
+        .spinner { width: 40px; height: 40px; border: 4px solid var(--border); border-top-color: var(--primary); border-radius: 50%; animation: spin 1s linear infinite; margin-bottom: 12px; }
+        @keyframes spin { to { transform: rotate(360deg); } }
 
-        .hidden { display: none !important; }
-        .income-text { color: var(--primary) !important; }
-        .expense-text { color: var(--danger) !important; font-weight: bold; }
-        .pending-text { color: var(--warning) !important; }
+        .income-text { color: #059669; }
+        .expense-text { color: #dc2626; }
+        .pending-text { color: #d97706; }
+
+        .empty-state { text-align: center; padding: 40px 20px; color: var(--text-secondary); }
+
+        @media (max-width: 480px) {
+            .header h1 { font-size: 18px; }
+            .summary-card { padding: 12px; }
+            .summary-card .value { font-size: 1rem; }
+        }
     </style>
 </head>
 <body>
-    <div id="toast"></div>
-    <div id="loadingOverlay">
+    <div class="loading-overlay" id="loadingOverlay">
         <div class="spinner"></div>
-        <p style="margin-top: 12px; font-weight: 600;" id="loadingText">Processando...</p>
+        <div id="loadingText">Sincronizando...</div>
     </div>
-    
+
+    <div class="toast" id="toast"></div>
+
     <header class="header">
         <div class="header-content">
-            <h1>Finanças</h1>
+            <h1>Financeiro</h1>
             <div class="header-controls">
                 <select id="yearSelect"></select>
                 <select id="monthSelect"></select>
@@ -347,44 +382,39 @@
     </header>
 
     <div class="search-container">
-        <input type="text" id="searchInput" class="search-input" placeholder="Buscar no mês selecionado...">
+        <input type="text" id="searchInput" class="search-input" placeholder="Buscar descrição ou categoria...">
     </div>
 
     <main class="main">
-        <div class="tabs">
+        <nav class="tabs">
             <button class="tab-button active" data-tab="resumo">Resumo</button>
-            <button class="tab-button" data-tab="graficos">Resumo Anual</button>
             <button class="tab-button" data-tab="receitas">Receitas</button>
             <button class="tab-button" data-tab="gastos">Gastos</button>
             <button class="tab-button" data-tab="pendentes">Pendentes</button>
-        </div>
+        </nav>
 
-        <!-- Resumo Tab -->
+        <!-- Tab Resumo -->
         <div id="resumo" class="tab-content">
             <div id="summaryContainer" class="summary"></div>
             
-            <!-- Gráfico na Tela Inicial -->
             <div class="chart-container">
-                <h4 class="chart-title">Distribuição de Gastos</h4>
+                <div class="chart-title">Distribuição de Gastos</div>
                 <div class="chart-wrapper" style="height: 250px;">
                     <canvas id="categoryChart"></canvas>
+                </div>
+            </div>
+
+            <div class="chart-container">
+                <div class="chart-title">Receitas vs Gastos (Ano)</div>
+                <div class="chart-wrapper" style="height: 200px;">
+                    <canvas id="monthlyChart"></canvas>
                 </div>
             </div>
 
             <div id="resumoCategories" class="transactions"></div>
         </div>
 
-        <!-- Gráficos Tab (Evolução Mensal) -->
-        <div id="graficos" class="tab-content hidden">
-            <div class="chart-container">
-                <h4 class="chart-title">Receitas vs Gastos (Ano)</h4>
-                <div class="chart-wrapper" style="height: 300px;">
-                    <canvas id="monthlyChart"></canvas>
-                </div>
-            </div>
-        </div>
-
-        <!-- Receitas Tab -->
+        <!-- Tab Receitas -->
         <div id="receitas" class="tab-content hidden">
             <div id="receitasView">
                 <div id="receitasCategoriesContainer" class="transactions"></div>
@@ -392,13 +422,13 @@
             <div id="receitasDetailView" class="hidden">
                 <div class="breadcrumb">
                     <button class="breadcrumb-back" onclick="app.showCategoryView('receitas')">← Voltar</button>
-                    <span id="receitasDetailTitle" style="font-weight: 700;"></span>
+                    <h3 id="receitasDetailTitle">Categoria</h3>
                 </div>
                 <div id="receitasDetailContainer" class="transactions"></div>
             </div>
         </div>
 
-        <!-- Gastos Tab -->
+        <!-- Tab Gastos -->
         <div id="gastos" class="tab-content hidden">
             <div id="gastosView">
                 <div id="gastosCategoriesContainer" class="transactions"></div>
@@ -406,13 +436,13 @@
             <div id="gastosDetailView" class="hidden">
                 <div class="breadcrumb">
                     <button class="breadcrumb-back" onclick="app.showCategoryView('gastos')">← Voltar</button>
-                    <span id="gastosDetailTitle" style="font-weight: 700;"></span>
+                    <h3 id="gastosDetailTitle">Categoria</h3>
                 </div>
                 <div id="gastosDetailContainer" class="transactions"></div>
             </div>
         </div>
 
-        <!-- Pendentes Tab -->
+        <!-- Tab Pendentes -->
         <div id="pendentes" class="tab-content hidden">
             <div id="pendentesView">
                 <div id="pendentesCategoriesContainer" class="transactions"></div>
@@ -420,7 +450,7 @@
             <div id="pendentesDetailView" class="hidden">
                 <div class="breadcrumb">
                     <button class="breadcrumb-back" onclick="app.showCategoryView('pendentes')">← Voltar</button>
-                    <span id="pendentesDetailTitle" style="font-weight: 700;"></span>
+                    <h3 id="pendentesDetailTitle">Categoria</h3>
                 </div>
                 <div id="pendentesDetailContainer" class="transactions"></div>
             </div>
@@ -429,17 +459,17 @@
 
     <button class="fab" id="fabButton">+</button>
 
-    <!-- Modal Lançamento -->
+    <!-- Modal Transação -->
     <div class="modal" id="modal">
         <div class="modal-content">
-            <div class="modal-header" style=" display: flex; flex-direction: row; justify-content: space-between; align-items: center; ">
-                <h2 id="modalTitle">Novo Lançamento</h2>
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                <h2 id="modalTitle">Nova Transação</h2>
                 <button class="modal-close" id="modalClose">&times;</button>
             </div>
             <form id="transactionForm">
                 <div class="form-group">
                     <label>Tipo</label>
-                    <select id="transactionType" required>
+                    <select id="transactionType">
                         <option value="receita">Receita</option>
                         <option value="gasto">Gasto</option>
                         <option value="pendente">Pendente</option>
@@ -447,41 +477,37 @@
                 </div>
                 <div class="form-group">
                     <label>Categoria</label>
-                    <div class="category-input-group" style="display: flex; gap: 8px;">
-                        <select id="transactionCategory" required style="flex: 1;"></select>
-                        <button type="button" onclick="app.openCategoryModal()" style="padding: 0 15px; border-radius: 8px; border: 1px solid var(--border); background: var(--bg-secondary); font-size: 20px;">+</button>
+                    <div style="display: flex; gap: 8px;">
+                        <select id="transactionCategory" style="flex: 1;"></select>
+                        <button type="button" onclick="app.openCategoryModal()" class="btn-sm btn-edit" style="width: auto; padding: 0 12px;">+</button>
                     </div>
                 </div>
                 <div class="form-group">
                     <label>Descrição</label>
-                    <input type="text" id="transactionDescription" placeholder="Ex: Aluguel" required>
+                    <input type="text" id="transactionDescription" required placeholder="Ex: Mercado Mensal">
                 </div>
                 <div class="form-group">
                     <label>Data</label>
                     <input type="date" id="transactionDate" required>
                 </div>
                 <div class="form-group">
-                    <label>Valor (R$)</label>
-                    <input type="number" id="transactionValue" placeholder="0.00" step="0.01" required>
+                    <label>Valor</label>
+                    <input type="number" id="transactionValue" step="0.01" required placeholder="0,00">
                 </div>
-                <div class="form-group hidden" id="installmentsGroup">
-                    <label>Número de Parcelas</label>
-                    <input type="number" id="transactionInstallments" placeholder="1" min="1">
+                <div id="installmentsGroup" class="form-group hidden">
+                    <label>Parcelas</label>
+                    <input type="number" id="transactionInstallments" min="1" value="1">
                 </div>
-                <div class="form-group" id="recurrentGroup">
-                    <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
-                        <input type="checkbox" id="isRecurrent" style="width: auto;">
-                        <span>Repetir mensalmente (até o fim do ano)</span>
-                    </label>
+                <div id="recurrentGroup" class="form-group" style="display: flex; align-items: center; gap: 8px;">
+                    <input type="checkbox" id="isRecurrent" style="width: auto;">
+                    <label for="isRecurrent" style="margin: 0;">Repetir até o fim do ano</label>
                 </div>
-                <div id="editFutureGroup" class="form-group hidden">
-                    <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
-                        <input type="checkbox" id="editFuture" style="width: auto;">
-                        <span>Aplicar em todas as parcelas futuras?</span>
-                    </label>
+                <div id="editFutureGroup" class="form-group hidden" style="display: flex; align-items: center; gap: 8px;">
+                    <input type="checkbox" id="editFuture" style="width: auto;">
+                    <label for="editFuture" style="margin: 0;">Atualizar parcelas futuras</label>
                 </div>
                 <button type="submit" class="btn-main btn-primary">Salvar</button>
-                <button type="button" class="btn-main btn-cancel" id="formCancel">Cancelar</button>
+                <button type="button" id="formCancel" class="btn-main btn-cancel">Cancelar</button>
             </form>
         </div>
     </div>
@@ -489,14 +515,13 @@
     <!-- Modal Categoria -->
     <div class="modal" id="categoryModal">
         <div class="modal-content" style="margin: auto; border-radius: 15px;">
-            <div class="modal-header"><h2>Nova Categoria</h2></div>
-            <form id="categoryForm">
+            <h2>Nova Categoria</h2>
+            <form id="categoryForm" style="margin-top: 15px;">
                 <div class="form-group">
-                    <label>Nome da Categoria</label>
-                    <input type="text" id="newCategoryName" required>
+                    <input type="text" id="newCategoryName" placeholder="Nome da categoria" required>
                 </div>
-                <button type="submit" class="btn-main btn-primary">Salvar</button>
-                <button type="button" class="btn-main btn-cancel" onclick="app.closeCategoryModal()">Cancelar</button>
+                <button type="submit" class="btn-main btn-primary">Adicionar</button>
+                <button type="button" onclick="app.closeCategoryModal()" class="btn-main btn-cancel">Cancelar</button>
             </form>
         </div>
     </div>
@@ -569,20 +594,19 @@
                 select.value = this.state.selectedMonthIndex;
             },
 
-	            renderData() {
-	                if (!this.state.data || !this.state.data.meses) return;
-	                const monthData = this.state.data.meses[this.state.selectedMonthIndex] || {};
-	                this.renderSummary(monthData);
-	                this.renderCategoryView('receitas', monthData.depositos);
-	                this.renderCategoryView('gastos', monthData.gastos);
-	                this.renderCategoryView('pendentes', monthData.pendentes);
-	                this.renderCharts();
-	                if (this.state.activeDetail) this.renderDetailView(this.state.activeDetail.type, this.state.activeDetail.category);
-	                
-	                // Reaplica a busca se houver algo digitado, mas sem trocar de aba
-	                const searchQuery = document.getElementById('searchInput').value;
-	                if (searchQuery) this.handleSearch(searchQuery, true);
-	            },
+            renderData() {
+                if (!this.state.data || !this.state.data.meses) return;
+                const monthData = this.state.data.meses[this.state.selectedMonthIndex] || {};
+                this.renderSummary(monthData);
+                this.renderCategoryView('receitas', monthData.depositos);
+                this.renderCategoryView('gastos', monthData.gastos);
+                this.renderCategoryView('pendentes', monthData.pendentes);
+                this.renderCharts();
+                if (this.state.activeDetail) this.renderDetailView(this.state.activeDetail.type, this.state.activeDetail.category);
+                
+                const searchQuery = document.getElementById('searchInput').value;
+                if (searchQuery) this.handleSearch(searchQuery, true);
+            },
 
             renderSummary(monthData) {
                 const income = this.calculateTotal(monthData.depositos);
@@ -623,7 +647,15 @@
                                 legend: { position: 'bottom', labels: { boxWidth: 12, font: { size: 10 } } } 
                             },
                             maintainAspectRatio: false,
-                            responsive: true
+                            responsive: true,
+                            onClick: (evt, activeElements, chart) => {
+                                if (activeElements.length > 0) {
+                                    const index = activeElements[0].index;
+                                    const label = chart.data.labels[index];
+                                    document.getElementById('searchInput').value = label;
+                                    this.handleSearch(label);
+                                }
+                            }
                         }
                     });
                 }
@@ -661,21 +693,21 @@
                 const container = document.getElementById(`${type}CategoriesContainer`);
                 if (!categoryData || !categoryData.categorias) { container.innerHTML = '<div class="empty-state">Nenhum item</div>'; return; }
                 
-	                const grouped = {};
-	                Object.entries(categoryData.categorias).forEach(([raw, items]) => {
-	                    const cleanName = raw.trim();
-	                    let total = 0, count = 0;
-	                    Object.values(items).forEach(t => { if (t.valor) { total += t.valor; count++; } });
-	                    
-	                    if (count > 0) {
-	                        if (grouped[cleanName]) {
-	                            grouped[cleanName].total += total;
-	                            grouped[cleanName].count += count;
-	                        } else {
-	                            grouped[cleanName] = { name: cleanName, total, count };
-	                        }
-	                    }
-	                });
+                const grouped = {};
+                Object.entries(categoryData.categorias).forEach(([raw, items]) => {
+                    const cleanName = raw.trim();
+                    let total = 0, count = 0;
+                    Object.values(items).forEach(t => { if (t.valor) { total += t.valor; count++; } });
+                    
+                    if (count > 0) {
+                        if (grouped[cleanName]) {
+                            grouped[cleanName].total += total;
+                            grouped[cleanName].count += count;
+                        } else {
+                            grouped[cleanName] = { name: cleanName, total, count };
+                        }
+                    }
+                });
 
                 const categories = Object.values(grouped).sort((a, b) => b.total - a.total);
                 const color = type === 'receitas' ? 'income-text' : type === 'gastos' ? 'expense-text' : 'pending-text';
@@ -697,25 +729,24 @@
             renderDetailView(type, category) {
                 const container = document.getElementById(`${type}DetailContainer`);
                 const monthData = this.state.data.meses[this.state.selectedMonthIndex] || {};
-	                const dataType = type === 'receitas' ? 'depositos' : type === 'gastos' ? 'gastos' : 'pendentes';
-	                const all = [];
-	                
-	                // Busca abrangente: procura por todas as variações da categoria (com/sem espaços)
-	                if (monthData[dataType]?.categorias) {
-	                    Object.entries(monthData[dataType].categorias).forEach(([catName, items]) => {
-	                        if (catName.trim() === category.trim()) {
-	                            Object.entries(items).forEach(([id, t]) => {
-	                                all.push({ id, ...t, type, category: catName });
-	                            });
-	                        }
-	                    });
-	                }
+                const dataType = type === 'receitas' ? 'depositos' : type === 'gastos' ? 'gastos' : 'pendentes';
+                const all = [];
+                
+                if (monthData[dataType]?.categorias) {
+                    Object.entries(monthData[dataType].categorias).forEach(([catName, items]) => {
+                        if (catName.trim() === category.trim()) {
+                            Object.entries(items).forEach(([id, t]) => {
+                                all.push({ id, ...t, type, category: catName });
+                            });
+                        }
+                    });
+                }
                 
                 all.sort((a, b) => this.parseDate(b.dia) - this.parseDate(a.dia));
                 const color = type === 'receitas' ? 'income-text' : type === 'gastos' ? 'expense-text' : 'pending-text';
                 
                 container.innerHTML = all.map(t => `
-                    <div class="transaction-item">
+                    <div class="transaction-item" onclick="event.stopPropagation()">
                         <div class="transaction-header">
                             <div class="transaction-info">
                                 <div class="transaction-description">${t.descricao}</div>
@@ -732,38 +763,44 @@
                 `).join('');
             },
 
-	            async handleSearch(query, skipTabSwitch = false) {
-	                if (!query) { if (!skipTabSwitch) this.renderData(); return; }
-	                const results = [];
-	                const q = query.toLowerCase();
-	                
-	                // Busca apenas no mês selecionado
-	                const mData = this.state.data.meses[this.state.selectedMonthIndex] || {};
-	                ['depositos', 'gastos', 'pendentes'].forEach(type => {
-	                    if (mData[type]?.categorias) {
-	                        Object.entries(mData[type].categorias).forEach(([cat, items]) => {
-	                            const cleanCat = cat.trim();
-	                            Object.entries(items).forEach(([id, t]) => {
-	                                if (t.descricao.toLowerCase().includes(q) || cleanCat.toLowerCase().includes(q)) {
-	                                    results.push({ ...t, type, category: cleanCat });
-	                                }
-	                            });
-	                        });
-	                    }
-	                });
-	
-	                const container = document.getElementById('resumoCategories');
-	                if (!skipTabSwitch) this.switchTab('resumo');
+            async handleSearch(query, skipTabSwitch = false) {
+                if (!query) { if (!skipTabSwitch) this.renderData(); return; }
+                const results = [];
+                const q = query.toLowerCase();
+                let totalSum = 0;
+                
+                const mData = this.state.data.meses[this.state.selectedMonthIndex] || {};
+                ['depositos', 'gastos', 'pendentes'].forEach(type => {
+                    if (mData[type]?.categorias) {
+                        Object.entries(mData[type].categorias).forEach(([cat, items]) => {
+                            const cleanCat = cat.trim();
+                            Object.entries(items).forEach(([id, t]) => {
+                                if (t.descricao.toLowerCase().includes(q) || cleanCat.toLowerCase().includes(q)) {
+                                    results.push({ ...t, type, category: cleanCat });
+                                    totalSum += t.valor || 0;
+                                }
+                            });
+                        });
+                    }
+                });
+
+                const container = document.getElementById('resumoCategories');
+                if (!skipTabSwitch) this.switchTab('resumo');
                 
                 if (results.length === 0) {
                     container.innerHTML = `<div style="text-align: center; padding: 20px; color: var(--text-secondary);">Nenhum resultado encontrado no mês de ${MONTHS[this.state.selectedMonthIndex]}.</div>`;
                     return;
                 }
 
-                container.innerHTML = `<h4 style="margin: 10px 0;">Resultados em ${MONTHS[this.state.selectedMonthIndex]}:</h4>` + results.map(t => {
+                container.innerHTML = `
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin: 10px 0;">
+                        <h4 style="margin: 0;">Resultados em ${MONTHS[this.state.selectedMonthIndex]}:</h4>
+                        <div style="font-weight: bold; color: var(--primary); font-family: 'Courier New', monospace;">Total: ${this.formatCurrency(totalSum)}</div>
+                    </div>
+                ` + results.map(t => {
                     const color = t.type === 'depositos' ? 'income-text' : t.type === 'gastos' ? 'expense-text' : 'pending-text';
                     return `
-                        <div class="transaction-item">
+                        <div class="transaction-item" onclick="app.goToCategory('${t.type}', '${t.category}')">
                             <div class="transaction-header">
                                 <div class="transaction-info">
                                     <div class="transaction-description">${t.descricao}</div>
@@ -776,10 +813,17 @@
                 }).join('');
             },
 
+            goToCategory(type, category) {
+                const typeMap = { 'depositos': 'receitas', 'gastos': 'gastos', 'pendentes': 'pendentes' };
+                const tabId = typeMap[type];
+                this.switchTab(tabId);
+                this.showDetailView(tabId, category);
+            },
+
             setupEventListeners() {
                 document.getElementById('yearSelect').onchange = (e) => { this.state.selectedYear = e.target.value; this.loadYearData(); };
                 document.getElementById('monthSelect').onchange = (e) => { this.state.selectedMonthIndex = parseInt(e.target.value); this.renderData(); };
-	                document.getElementById('searchInput').oninput = (e) => this.handleSearch(e.target.value, false);
+                document.getElementById('searchInput').oninput = (e) => this.handleSearch(e.target.value, false);
                 
                 document.querySelectorAll('.tab-button').forEach(btn => {
                     btn.onclick = () => {
@@ -800,8 +844,8 @@
                     e.preventDefault();
                     this.showLoading('Salvando...');
                     const type = document.getElementById('transactionType').value;
-	                    const category = document.getElementById('transactionCategory').value.trim();
-	                    const description = document.getElementById('transactionDescription').value.trim();
+                    const category = document.getElementById('transactionCategory').value.trim();
+                    const description = document.getElementById('transactionDescription').value.trim();
                     const date = document.getElementById('transactionDate').value;
                     const value = Math.round(parseFloat(document.getElementById('transactionValue').value) * 100);
                     const installments = parseInt(document.getElementById('transactionInstallments').value) || 1;
@@ -853,26 +897,23 @@
                     await this.loadYearData();
                 };
 
-            document.getElementById('categoryForm').onsubmit = async (e) => {
-	                    e.preventDefault();
-	                    const name = document.getElementById('newCategoryName').value.trim();
-	                    const type = document.getElementById('transactionType').value;
-	                    if (name) {
-			                        // Busca ignorando espaços extras e maiúsculas/minúsculas
-			                        const existingCategory = this.state.customCategories[type].find(c => c.trim().toLowerCase() === name.toLowerCase());
-			                        if (existingCategory) {
-			                            // Seleciona a existente (já com trim)
-			                            document.getElementById('transactionCategory').value = existingCategory.trim();
-			                        } else {
-			                            // Adiciona nova já com trim
-			                            this.state.customCategories[type].push(name);
-			                            await fetch(`${FIREBASE_URL}${CATEGORIES_PATH}.json`, { method: 'PUT', body: JSON.stringify(this.state.customCategories) });
-			                            this.updateCategoryOptions();
-			                            document.getElementById('transactionCategory').value = name;
-			                        }
-			                        this.closeCategoryModal();
-			                    }
-	                };
+                document.getElementById('categoryForm').onsubmit = async (e) => {
+                    e.preventDefault();
+                    const name = document.getElementById('newCategoryName').value.trim();
+                    const type = document.getElementById('transactionType').value;
+                    if (name) {
+                        const existingCategory = this.state.customCategories[type].find(c => c.trim().toLowerCase() === name.toLowerCase());
+                        if (existingCategory) {
+                            document.getElementById('transactionCategory').value = existingCategory.trim();
+                        } else {
+                            this.state.customCategories[type].push(name);
+                            await fetch(`${FIREBASE_URL}${CATEGORIES_PATH}.json`, { method: 'PUT', body: JSON.stringify(this.state.customCategories) });
+                            this.updateCategoryOptions();
+                            document.getElementById('transactionCategory').value = name;
+                        }
+                        this.closeCategoryModal();
+                    }
+                };
             },
 
             openModal(type = null, category = null, id = null) {
