@@ -219,6 +219,7 @@
             box-shadow: var(--shadow);
             transition: all 0.2s;
             cursor: pointer;
+            position: relative;
         }
 
         .category-item:active {
@@ -240,6 +241,13 @@
             color: var(--text-secondary);
         }
 
+        .category-value-container {
+            display: flex;
+            flex-direction: column;
+            align-items: flex-end;
+            gap: 8px;
+        }
+
         .category-value {
             font-size: 16px;
             font-weight: 700;
@@ -251,6 +259,23 @@
         .category-value.income { color: var(--primary); }
         .category-value.expense { color: var(--danger); }
         .category-value.pending { color: var(--warning); }
+
+        .btn-pay-all {
+            background-color: var(--warning);
+            color: white;
+            border: none;
+            border-radius: 4px;
+            padding: 4px 8px;
+            font-size: 10px;
+            font-weight: 600;
+            cursor: pointer;
+            text-transform: uppercase;
+            transition: opacity 0.2s;
+        }
+
+        .btn-pay-all:hover {
+            opacity: 0.9;
+        }
 
         /* Transaction Item (Detalhes) - AJUSTE RESPONSIVO */
         .transaction-item {
@@ -349,34 +374,43 @@
         .btn-warning { background-color: var(--warning); color: white; }
         .btn-secondary { background-color: var(--bg-secondary); color: var(--text); border: 1px solid var(--border); }
 
-        .btn:active { opacity: 0.9; transform: scale(0.98); }
-
         /* Modal */
         .modal {
-            display: none;
             position: fixed;
             top: 0;
             left: 0;
-            right: 0;
-            bottom: 0;
+            width: 100%;
+            height: 100%;
             background-color: rgba(0, 0, 0, 0.5);
-            z-index: 1000;
+            display: flex;
+            justify-content: center;
             align-items: flex-end;
+            z-index: 1000;
+            opacity: 0;
+            visibility: hidden;
+            transition: all 0.3s;
         }
 
-        .modal.active { display: flex; }
+        .modal.active {
+            opacity: 1;
+            visibility: visible;
+        }
 
         .modal-content {
             background-color: var(--bg);
             width: 100%;
-            border-radius: 16px 16px 0 0;
-            padding: 24px 16px;
+            max-width: 500px;
+            border-radius: 20px 20px 0 0;
+            padding: 24px;
+            transform: translateY(100%);
+            transition: transform 0.3s;
             max-height: 90vh;
             overflow-y: auto;
-            animation: slideUp 0.3s ease-out;
         }
 
-        @keyframes slideUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
+        .modal.active .modal-content {
+            transform: translateY(0);
+        }
 
         .modal-header {
             display: flex;
@@ -385,79 +419,141 @@
             margin-bottom: 20px;
         }
 
-        .modal-header h2 { font-size: 20px; margin: 0; }
-
-        .modal-close { background: none; border: none; font-size: 24px; cursor: pointer; color: var(--text-secondary); }
+        .modal-close {
+            font-size: 28px;
+            cursor: pointer;
+            color: var(--text-secondary);
+            background: none;
+            border: none;
+        }
 
         /* Form */
-        .form-group { margin-bottom: 16px; }
-        .form-group label { display: block; font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 8px; color: var(--text-secondary); }
-        .form-group input, .form-group select, .form-group textarea { width: 100%; padding: 12px; border: 1px solid var(--border); border-radius: 6px; font-family: 'Inter', sans-serif; font-size: 14px; color: var(--text); }
-        .form-group input:focus, .form-group select:focus, .form-group textarea:focus { outline: none; border-color: var(--primary); box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.1); }
-        .form-actions { display: flex; gap: 12px; margin-top: 24px; }
-        .form-actions button { flex: 1; }
-
-        /* Empty State */
-        .empty-state { text-align: center; padding: 40px 20px; color: var(--text-secondary); }
-        .empty-state-icon { font-size: 48px; margin-bottom: 12px; }
-        .empty-state-text { font-size: 14px; }
-
-        /* Loading */
-        .loading { display: flex; justify-content: center; align-items: center; padding: 40px; }
-        .spinner { border: 3px solid var(--border); border-top: 3px solid var(--primary); border-radius: 50%; width: 40px; height: 40px; animation: spin 1s linear infinite; }
-        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
-
-        /* Breadcrumb */
-        .breadcrumb { display: flex; align-items: center; gap: 8px; margin-bottom: 16px; font-size: 14px; color: var(--text-secondary); }
-        .breadcrumb-back { background: none; border: none; color: var(--primary); cursor: pointer; font-size: 18px; padding: 0; }
-
-        /* Tab Content */
-        .tab-content { display: none; }
-        .tab-content.active { display: block; }
-
-        /* FAB Button */
-        .fab { position: fixed; bottom: 20px; right: 20px; width: 56px; height: 56px; border-radius: 50%; background-color: var(--primary); color: white; border: none; font-size: 28px; font-weight: bold; cursor: pointer; box-shadow: var(--shadow-lg); transition: all 0.2s; z-index: 500; }
-        .fab:active { transform: scale(0.95); }
-
-        .hidden { display: none !important; }
-
-        /* Toast Notification */
-        .toast { position: fixed; bottom: 20px; left: 20px; right: 20px; background-color: var(--text); color: white; padding: 16px; border-radius: 6px; box-shadow: var(--shadow-lg); animation: slideUp 0.3s ease-out; z-index: 2000; }
-        .toast.success { background-color: var(--primary); }
-        .toast.error { background-color: var(--danger); }
-
-        /* Category Input Group */
-        .category-input-group { display: flex; gap: 8px; align-items: center; }
-        .btn-add-category { background-color: var(--primary); color: white; border: none; border-radius: 6px; width: 40px; height: 40px; font-size: 20px; cursor: pointer; display: flex; justify-content: center; align-items: center; }
-
-        @media (max-width: 480px) {
-            .header h1 { font-size: 20px; }
-            .summary-card .value { font-size: 20px; }
+        .form-group {
+            margin-bottom: 16px;
         }
+
+        .form-group label {
+            display: block;
+            font-size: 14px;
+            font-weight: 500;
+            margin-bottom: 6px;
+            color: var(--text-secondary);
+        }
+
+        .form-group input, .form-group select {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            font-family: 'Inter', sans-serif;
+            font-size: 16px;
+        }
+
+        .form-actions {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+            margin-top: 24px;
+        }
+
+        .category-input-group {
+            display: flex;
+            gap: 8px;
+        }
+
+        .btn-add-category {
+            background-color: var(--bg-secondary);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 0 16px;
+            font-size: 20px;
+            cursor: pointer;
+        }
+
+        /* FAB */
+        .fab {
+            position: fixed;
+            bottom: 24px;
+            right: 24px;
+            width: 56px;
+            height: 56px;
+            border-radius: 28px;
+            background-color: var(--primary);
+            color: white;
+            border: none;
+            font-size: 24px;
+            box-shadow: var(--shadow-lg);
+            cursor: pointer;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 90;
+            transition: transform 0.2s;
+        }
+
+        .fab:active {
+            transform: scale(0.9);
+        }
+
+        /* Utils */
+        .hidden { display: none !important; }
+        
+        .empty-state {
+            text-align: center;
+            padding: 40px 20px;
+            color: var(--text-secondary);
+            font-size: 14px;
+        }
+
+        .breadcrumb {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 16px;
+        }
+
+        .breadcrumb-back {
+            background: none;
+            border: none;
+            color: var(--primary);
+            font-weight: 600;
+            cursor: pointer;
+            font-size: 14px;
+        }
+
+        #toast {
+            position: fixed;
+            bottom: 100px;
+            left: 50%;
+            transform: translateX(-50%);
+            background-color: #333;
+            color: white;
+            padding: 12px 24px;
+            border-radius: 50px;
+            font-size: 14px;
+            z-index: 2000;
+            opacity: 0;
+            transition: opacity 0.3s;
+            pointer-events: none;
+        }
+
+        #toast.show { opacity: 1; }
     </style>
 </head>
 <body>
-    <!-- Header -->
+    <div id="toast"></div>
+    
     <header class="header">
         <div class="header-content">
-            <div style="display: flex; align-items: center; gap: 8px;">
-                <h1>💰 Financeiro</h1>
-                <button id="installBtn" class="btn btn-sm btn-primary hidden" style="padding: 4px 8px; font-size: 10px;">Instalar App</button>
-            </div>
+            <h1>Finanças</h1>
             <div class="header-controls">
-                <select id="yearSelect">
-                    <option value="">Carregando...</option>
-                </select>
-                <select id="monthSelect">
-                    <option value="">Mês</option>
-                </select>
+                <select id="yearSelect"></select>
+                <select id="monthSelect"></select>
             </div>
         </div>
     </header>
 
-    <!-- Main Content -->
     <main class="main">
-        <!-- Tabs -->
         <div class="tabs">
             <button class="tab-button active" data-tab="resumo">Resumo</button>
             <button class="tab-button" data-tab="receitas">Receitas</button>
@@ -466,16 +562,12 @@
         </div>
 
         <!-- Resumo Tab -->
-        <div id="resumo" class="tab-content active">
-            <div class="summary" id="summaryContainer">
-                <div class="loading">
-                    <div class="spinner"></div>
-                </div>
-            </div>
+        <div id="resumo" class="tab-content">
+            <div id="summaryContainer" class="summary"></div>
         </div>
 
         <!-- Receitas Tab -->
-        <div id="receitas" class="tab-content">
+        <div id="receitas" class="tab-content hidden">
             <div id="receitasView">
                 <div id="receitasCategoriesContainer" class="transactions"></div>
             </div>
@@ -489,7 +581,7 @@
         </div>
 
         <!-- Gastos Tab -->
-        <div id="gastos" class="tab-content">
+        <div id="gastos" class="tab-content hidden">
             <div id="gastosView">
                 <div id="gastosCategoriesContainer" class="transactions"></div>
             </div>
@@ -503,7 +595,7 @@
         </div>
 
         <!-- Pendentes Tab -->
-        <div id="pendentes" class="tab-content">
+        <div id="pendentes" class="tab-content hidden">
             <div id="pendentesView">
                 <div id="pendentesCategoriesContainer" class="transactions"></div>
             </div>
@@ -630,6 +722,7 @@
                 editingId: null,
                 editingType: null,
                 editingCategory: null,
+                activeDetail: null, // { type, category }
                 allYears: [],
                 confirmTarget: null,
                 customCategories: { receita: [], gasto: [], pendente: [] }
@@ -720,10 +813,13 @@
                 const monthSelect = document.getElementById('monthSelect');
                 monthSelect.innerHTML = '';
                 MONTHS.forEach((name, i) => {
-                    const opt = document.createElement('option');
-                    opt.value = i; opt.textContent = name;
-                    monthSelect.appendChild(opt);
+                    const option = document.createElement('option');
+                    option.value = i; option.textContent = name;
+                    monthSelect.appendChild(option);
                 });
+                if (this.state.selectedMonthIndex !== null) {
+                    monthSelect.value = this.state.selectedMonthIndex;
+                }
             },
 
             renderData() {
@@ -733,6 +829,11 @@
                 this.renderCategoryView('receitas', monthData.depositos);
                 this.renderCategoryView('gastos', monthData.gastos);
                 this.renderCategoryView('pendentes', monthData.pendentes);
+                
+                // Se houver um detalhe aberto, atualiza ele também
+                if (this.state.activeDetail) {
+                    this.renderDetailView(this.state.activeDetail.type, this.state.activeDetail.category);
+                }
             },
 
             renderSummary(monthData) {
@@ -760,8 +861,6 @@
                         <h3>Gastos</h3>
                         <div class="value">-${this.formatCurrency(expense)}</div>
                     </div>
-                    
-                    
                 `;
             },
 
@@ -797,17 +896,40 @@
 
                 const color = type === 'receitas' ? 'income' : type === 'gastos' ? 'expense' : 'pending';
                 container.innerHTML = categories.map(cat => `
-                    <div class="category-item" onclick="app.showDetailView('${type}', '${cat.name}')">
+                    <div class="category-item" onclick="app.handleCategoryClick(event, '${type}', '${cat.name}')">
                         <div class="category-info">
                             <div class="category-name">${cat.name}</div>
                             <div class="category-count">${cat.count} lançamento(s)</div>
                         </div>
-                        <div class="category-value ${color}">${type === 'receitas' ? '+' : '-'}${this.formatCurrency(cat.total)}</div>
+                        <div class="category-value-container">
+                            <div class="category-value ${color}">${type === 'receitas' ? '+' : '-'}${this.formatCurrency(cat.total)}</div>
+                            ${type === 'pendentes' ? `<button class="btn-pay-all" onclick="app.askConfirmPayAll(event, '${cat.name}')">Pagar Tudo</button>` : ''}
+                        </div>
                     </div>
                 `).join('');
             },
 
+            handleCategoryClick(event, type, categoryName) {
+                if (event.target.classList.contains('btn-pay-all')) return;
+                this.showDetailView(type, categoryName);
+            },
+
+            askConfirmPayAll(event, category) {
+                event.stopPropagation();
+                this.state.confirmTarget = { action: 'payAll', category };
+                
+                document.getElementById('confirmTitle').textContent = 'Pagar Tudo';
+                document.getElementById('confirmMessage').textContent = `Deseja marcar TODOS os lançamentos da categoria "${category}" como pagos?`;
+                const btn = document.getElementById('confirmActionButton');
+                btn.className = 'btn btn-primary';
+                btn.textContent = 'Pagar Tudo';
+                btn.onclick = () => this.executeConfirmedAction();
+                
+                document.getElementById('confirmModal').classList.add('active');
+            },
+
             showDetailView(type, category) {
+                this.state.activeDetail = { type, category };
                 document.getElementById(`${type}View`).classList.add('hidden');
                 document.getElementById(`${type}DetailView`).classList.remove('hidden');
                 document.getElementById(`${type}DetailTitle`).textContent = category;
@@ -815,6 +937,7 @@
             },
 
             showCategoryView(type) {
+                this.state.activeDetail = null;
                 document.getElementById(`${type}View`).classList.remove('hidden');
                 document.getElementById(`${type}DetailView`).classList.add('hidden');
             },
@@ -881,10 +1004,40 @@
                 const { action, type, category, id } = this.state.confirmTarget;
                 if (action === 'pay') {
                     await this.markAsPaid(type, category, id);
+                } else if (action === 'payAll') {
+                    await this.markCategoryAsPaid(category);
                 } else {
                     await this.confirmDelete(type, category, id);
                 }
                 this.closeConfirmModal();
+            },
+
+            async markCategoryAsPaid(category) {
+                try {
+                    const monthData = this.state.data.meses[this.state.selectedMonthIndex];
+                    const items = monthData.pendentes.categorias[category];
+                    
+                    if (!items) return;
+
+                    const promises = Object.entries(items).map(async ([id, t]) => {
+                        // Post to gastos
+                        await fetch(`${FIREBASE_URL}${FIREBASE_PATH}/${this.state.selectedYear}/meses/${this.state.selectedMonthIndex}/gastos/categorias/${category}.json`, { 
+                            method: 'POST', 
+                            body: JSON.stringify(t) 
+                        });
+                        // Delete from pendentes
+                        await fetch(`${FIREBASE_URL}${FIREBASE_PATH}/${this.state.selectedYear}/meses/${this.state.selectedMonthIndex}/pendentes/categorias/${category}/${id}.json`, { 
+                            method: 'DELETE' 
+                        });
+                    });
+
+                    await Promise.all(promises);
+                    this.showToast('Todos os itens pagos!', 'success');
+                    await this.loadYearData();
+                } catch (error) {
+                    console.error('Erro ao pagar categoria:', error);
+                    this.showToast('Erro ao processar pagamentos', 'error');
+                }
             },
 
             editTransaction(type, category, id) { this.openModal(type, category, id); },
@@ -933,161 +1086,135 @@
 
             updateCategoryOptions() {
                 const type = document.getElementById('transactionType').value;
-                const select = document.getElementById('transactionCategory');
-                select.innerHTML = '<option value="">Selecione</option>';
-                (this.state.customCategories[type] || []).forEach(c => {
-                    const opt = document.createElement('option'); opt.value = opt.textContent = c;
-                    select.appendChild(opt);
+                const categorySelect = document.getElementById('transactionCategory');
+                categorySelect.innerHTML = '<option value="">Selecione uma categoria</option>';
+                const categories = this.state.customCategories[type] || [];
+                categories.forEach(cat => {
+                    const option = document.createElement('option');
+                    option.value = cat; option.textContent = cat;
+                    categorySelect.appendChild(option);
                 });
-            },
-
-            async handleFormSubmit(e) {
-                e.preventDefault();
-                const type = document.getElementById('transactionType').value;
-                const category = document.getElementById('transactionCategory').value.trim();
-                const desc = document.getElementById('transactionDescription').value.trim();
-                const date = document.getElementById('transactionDate').value;
-                const value = Math.round(parseFloat(document.getElementById('transactionValue').value) * 100);
-                const installments = parseInt(document.getElementById('transactionInstallments').value) || 1;
-
-                const dateStr = this.formatDateFromInput(date);
-                const [d, m, y] = dateStr.split('/');
-                let curM = parseInt(m) - 1, curY = parseInt(y);
-                const dataType = type === 'receita' ? 'depositos' : type === 'gasto' ? 'gastos' : 'pendentes';
-
-                if (this.state.editingId) {
-                    const oldType = this.state.editingType === 'receitas' ? 'depositos' : this.state.editingType === 'gastos' ? 'gastos' : 'pendentes';
-                    if (this.state.editingCategory !== category || this.state.selectedMonthIndex !== curM || this.state.selectedYear !== y || oldType !== dataType) {
-                        await fetch(`${FIREBASE_URL}${FIREBASE_PATH}/${this.state.selectedYear}/meses/${this.state.selectedMonthIndex}/${oldType}/categorias/${this.state.editingCategory}/${this.state.editingId}.json`, { method: 'DELETE' });
-                        await fetch(`${FIREBASE_URL}${FIREBASE_PATH}/${curY}/meses/${curM}/${dataType}/categorias/${category}.json`, { method: 'POST', body: JSON.stringify({ descricao: desc, dia: dateStr, valor: value }) });
-                    } else {
-                        await fetch(`${FIREBASE_URL}${FIREBASE_PATH}/${curY}/meses/${curM}/${dataType}/categorias/${category}/${this.state.editingId}.json`, { method: 'PUT', body: JSON.stringify({ descricao: desc, dia: dateStr, valor: value }) });
-                    }
-                } else {
-                    if (type === 'pendente' && installments > 1) {
-                        for (let i = 1; i <= installments; i++) {
-                            const iDesc = `${desc} - ${i.toString().padStart(2, '0')}/${installments.toString().padStart(2, '0')}`;
-                            const iDate = `${d}/${(curM + 1).toString().padStart(2, '0')}/${curY}`;
-                            await fetch(`${FIREBASE_URL}${FIREBASE_PATH}/${curY}/meses/${curM}/${dataType}/categorias/${category}.json`, { method: 'POST', body: JSON.stringify({ descricao: iDesc, dia: iDate, valor: value }) });
-                            curM++; if (curM > 11) { curM = 0; curY++; }
-                        }
-                    } else {
-                        await fetch(`${FIREBASE_URL}${FIREBASE_PATH}/${curY}/meses/${curM}/${dataType}/categorias/${category}.json`, { method: 'POST', body: JSON.stringify({ descricao: desc, dia: dateStr, valor: value }) });
-                    }
-                }
-
-                this.showToast('Salvo!', 'success');
-                this.closeModal();
-                await this.loadYearData();
-                const view = type === 'receita' ? 'receitas' : type === 'gasto' ? 'gastos' : 'pendentes';
-                const detailView = document.getElementById(`${view}DetailView`);
-                if (detailView && !detailView.classList.contains('hidden')) {
-                    if (this.state.editingId && this.state.editingCategory !== category) this.showCategoryView(view);
-                    else this.renderDetailView(view, category);
-                }
-            },
-
-            openCategoryModal() {
-                const type = document.getElementById('transactionType').value;
-                document.getElementById('categoryModalTitle').textContent = `Nova Categoria (${type})`;
-                document.getElementById('categoryModal').classList.add('active');
-            },
-
-            closeCategoryModal() { document.getElementById('categoryModal').classList.remove('active'); },
-
-            async handleCategorySubmit(e) {
-                e.preventDefault();
-                const type = document.getElementById('transactionType').value;
-                const name = document.getElementById('newCategoryName').value.trim();
-                const exists = this.state.customCategories[type].find(c => c.trim().toLowerCase() === name.toLowerCase());
-                if (!exists) {
-                    this.state.customCategories[type].push(name);
-                    await this.saveAllCategories();
-                    this.updateCategoryOptions();
-                    document.getElementById('transactionCategory').value = name;
-                } else {
-                    document.getElementById('transactionCategory').value = exists;
-                }
-                this.closeCategoryModal();
-            },
-
-            calculateTotal(data) {
-                let t = 0;
-                if (data?.categorias) Object.values(data.categorias).forEach(c => Object.values(c).forEach(i => t += (i.valor || 0)));
-                return t;
-            },
-            formatCurrency(v) { return (v / 100).toLocaleString('pt-BR', { minimumFractionDigits: 2 }); },
-            parseDate(s) { const [d, m, y] = s.split('/'); return new Date(y, m - 1, d); },
-            formatDateForInput(s) { const [d, m, y] = s.split('/'); return `${y}-${m.padStart(2, '0')}-${d.padStart(2, '0')}`; },
-            formatDateFromInput(s) { const [y, m, d] = s.split('-'); return `${d}/${m}/${y}`; },
-            showToast(m, t) {
-                const toast = document.createElement('div'); toast.className = `toast ${t}`; toast.textContent = m;
-                document.body.appendChild(toast); setTimeout(() => toast.remove(), 3000);
+                
+                const installmentsGroup = document.getElementById('installmentsGroup');
+                if (type === 'pendente') installmentsGroup.classList.remove('hidden');
+                else installmentsGroup.classList.add('hidden');
             },
 
             setupEventListeners() {
-                document.getElementById('yearSelect').addEventListener('change', (e) => { this.state.selectedYear = e.target.value; this.loadYearData(); });
-                document.getElementById('monthSelect').addEventListener('change', (e) => { this.state.selectedMonthIndex = e.target.value; this.renderData(); });
-                document.querySelectorAll('.tab-button').forEach(btn => btn.addEventListener('click', () => {
-                    document.querySelectorAll('.tab-button, .tab-content').forEach(el => el.classList.remove('active'));
-                    btn.classList.add('active'); document.getElementById(btn.dataset.tab).classList.add('active');
-                }));
-                document.getElementById('fabButton').addEventListener('click', () => this.openModal());
-                document.getElementById('modalClose').addEventListener('click', () => this.closeModal());
-                document.getElementById('formCancel').addEventListener('click', () => this.closeModal());
-                document.getElementById('transactionForm').addEventListener('submit', (e) => this.handleFormSubmit(e));
-                document.getElementById('categoryForm').addEventListener('submit', (e) => this.handleCategorySubmit(e));
-                document.getElementById('transactionType').addEventListener('change', () => {
-                    this.updateCategoryOptions();
-                    const type = document.getElementById('transactionType').value;
-                    document.getElementById('installmentsGroup').classList.toggle('hidden', type !== 'pendente');
+                document.getElementById('yearSelect').onchange = (e) => { this.state.selectedYear = e.target.value; this.loadYearData(); };
+                document.getElementById('monthSelect').onchange = (e) => { this.state.selectedMonthIndex = parseInt(e.target.value); this.renderData(); };
+                
+                document.querySelectorAll('.tab-button').forEach(btn => {
+                    btn.onclick = () => {
+                        document.querySelectorAll('.tab-button').forEach(b => b.classList.remove('active'));
+                        document.querySelectorAll('.tab-content').forEach(c => c.classList.add('hidden'));
+                        btn.classList.add('active');
+                        document.getElementById(btn.dataset.tab).classList.remove('hidden');
+                    };
                 });
+
+                document.getElementById('fabButton').onclick = () => this.openModal();
+                document.getElementById('modalClose').onclick = () => this.closeModal();
+                document.getElementById('formCancel').onclick = () => this.closeModal();
+                
+                document.getElementById('transactionType').onchange = () => this.updateCategoryOptions();
+
+                document.getElementById('transactionForm').onsubmit = async (e) => {
+                    e.preventDefault();
+                    const type = document.getElementById('transactionType').value;
+                    const category = document.getElementById('transactionCategory').value;
+                    const description = document.getElementById('transactionDescription').value;
+                    const date = document.getElementById('transactionDate').value;
+                    const value = Math.round(parseFloat(document.getElementById('transactionValue').value) * 100);
+                    const installments = parseInt(document.getElementById('transactionInstallments').value) || 1;
+
+                    const t = { descricao: description, dia: this.formatDateFromInput(date), valor: value };
+                    const dataType = type === 'receita' ? 'depositos' : type === 'gasto' ? 'gastos' : 'pendentes';
+
+                    if (this.state.editingId) {
+                        await fetch(`${FIREBASE_URL}${FIREBASE_PATH}/${this.state.selectedYear}/meses/${this.state.selectedMonthIndex}/${dataType}/categorias/${category}/${this.state.editingId}.json`, { method: 'PUT', body: JSON.stringify(t) });
+                    } else {
+                        if (type === 'pendente' && installments > 1) {
+                            const [year, month, day] = date.split('-').map(Number);
+                            for (let i = 0; i < installments; i++) {
+                                // Calcula a data correta para cada parcela
+                                let d = new Date(year, month - 1 + i, day);
+                                
+                                // Se o dia resultante for diferente do dia original, 
+                                // significa que o mês é mais curto (ex: 31 de Março -> 31 de Abril vira 1 de Maio)
+                                // Ajustamos para o último dia do mês correto
+                                if (d.getDate() !== day) {
+                                    d = new Date(year, month + i, 0);
+                                }
+
+                                let m = d.getMonth();
+                                let y = d.getFullYear();
+                                let formattedDay = String(d.getDate()).padStart(2, '0');
+                                let formattedMonth = String(m + 1).padStart(2, '0');
+                                let formattedYear = y;
+                                
+                                const installmentDesc = `${description} (${i + 1}/${installments})`;
+                                const instT = { 
+                                    ...t, 
+                                    descricao: installmentDesc,
+                                    dia: `${formattedDay}/${formattedMonth}/${formattedYear}`
+                                };
+                                
+                                await fetch(`${FIREBASE_URL}${FIREBASE_PATH}/${y}/meses/${m}/pendentes/categorias/${category}.json`, { 
+                                    method: 'POST', 
+                                    body: JSON.stringify(instT) 
+                                });
+                            }
+                        } else {
+                            await fetch(`${FIREBASE_URL}${FIREBASE_PATH}/${this.state.selectedYear}/meses/${this.state.selectedMonthIndex}/${dataType}/categorias/${category}.json`, { method: 'POST', body: JSON.stringify(t) });
+                        }
+                    }
+
+                    this.showToast('Salvo!', 'success');
+                    this.closeModal();
+                    await this.loadYearData();
+                };
+
+                document.getElementById('categoryForm').onsubmit = async (e) => {
+                    e.preventDefault();
+                    const name = document.getElementById('newCategoryName').value.trim();
+                    const type = document.getElementById('transactionType').value;
+                    if (name && !this.state.customCategories[type].includes(name)) {
+                        this.state.customCategories[type].push(name);
+                        await this.saveAllCategories();
+                        this.updateCategoryOptions();
+                        document.getElementById('transactionCategory').value = name;
+                        this.closeCategoryModal();
+                    }
+                };
+            },
+
+            openCategoryModal() { document.getElementById('categoryModal').classList.add('active'); },
+            closeCategoryModal() { document.getElementById('categoryModal').classList.remove('active'); },
+
+            formatCurrency(v) { return (v / 100).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }); },
+            formatDateFromInput(d) { const [y, m, day] = d.split('-'); return `${day}/${m}/${y}`; },
+            formatDateForInput(d) { const [day, m, y] = d.split('/'); return `${y}-${m}-${day}`; },
+            parseDate(d) { const [day, m, y] = d.split('/'); return new Date(y, m - 1, day); },
+            calculateTotal(data) {
+                if (!data || !data.categorias) return 0;
+                let total = 0;
+                Object.values(data.categorias).forEach(cat => {
+                    Object.values(cat).forEach(t => { total += t.valor || 0; });
+                });
+                return total;
+            },
+
+            showToast(msg, type) {
+                const toast = document.getElementById('toast');
+                toast.textContent = msg;
+                toast.style.backgroundColor = type === 'success' ? '#10b981' : '#ef4444';
+                toast.classList.add('show');
+                setTimeout(() => toast.classList.remove('show'), 3000);
             }
         };
 
-        let deferredPrompt;
-        const installBtn = document.getElementById('installBtn');
-
-        window.addEventListener('beforeinstallprompt', (e) => {
-            // Impede que o Chrome mostre o banner automático
-            e.preventDefault();
-            // Guarda o evento para ser disparado depois
-            deferredPrompt = e;
-            // Mostra o botão de instalação manual
-            installBtn.classList.remove('hidden');
-        });
-
-        installBtn.addEventListener('click', async () => {
-            if (deferredPrompt) {
-                // Mostra o prompt de instalação
-                deferredPrompt.prompt();
-                // Espera pela escolha do usuário
-                const { outcome } = await deferredPrompt.userChoice;
-                console.log(`Usuário escolheu: ${outcome}`);
-                // Limpa o prompt
-                deferredPrompt = null;
-                // Esconde o botão
-                installBtn.classList.add('hidden');
-            }
-        });
-
-        window.addEventListener('appinstalled', (evt) => {
-            console.log('App instalado com sucesso!');
-            installBtn.classList.add('hidden');
-        });
-
-        document.addEventListener('DOMContentLoaded', () => {
-            app.init();
-            
-            // Registro do Service Worker para PWA
-            if ('serviceWorker' in navigator) {
-                window.addEventListener('load', () => {
-                    navigator.serviceWorker.register('sw.js')
-                        .then(reg => console.log('Service Worker registrado!', reg))
-                        .catch(err => console.log('Erro ao registrar Service Worker:', err));
-                });
-            }
-        });
+        app.init();
     </script>
 </body>
 </html>
