@@ -740,7 +740,7 @@
                 const income = this.calculateTotal(monthData.depositos);
                 const expense = this.calculateTotal(monthData.gastos);
                 const pending = this.calculateTotal(monthData.pendentes);
-                const balance = income - expense - pending;
+                const balance = income - expense;
                 
                 container.innerHTML = `
                     <div class="summary-card balance">
