@@ -141,7 +141,7 @@
             color: var(--text);
         }
 
-        /* Summary Cards - RESTAURADOS ESTILOS ORIGINAIS */
+        /* Summary Cards */
         .summary {
             display: grid;
             grid-template-columns: 1fr 1fr;
@@ -180,10 +180,10 @@
         }
 
         .summary-card .value {
-            font-size: 1.25rem; /* Usando rem para melhor escala */
+            font-size: 1.25rem;
             font-weight: 700;
             font-family: 'Courier New', monospace;
-            word-break: break-all; /* Evita quebra de layout com valores gigantes */
+            word-break: break-all;
             line-height: 1.2;
         }
 
@@ -239,7 +239,7 @@
 
         .category-info {
             flex: 1;
-            min-width: 0; /* Permite que o flex-item encolha corretamente */
+            min-width: 0;
             margin-right: 8px;
         }
         
@@ -249,7 +249,7 @@
             margin-bottom: 4px;
             white-space: nowrap;
             overflow: hidden;
-            text-overflow: ellipsis; /* Corta nomes de categoria muito longos com ... */
+            text-overflow: ellipsis;
         }
 
         .category-count {
@@ -294,14 +294,14 @@
             opacity: 0.9;
         }
 
-        /* Transaction Item (Detalhes) - AJUSTE RESPONSIVO */
+        /* Transaction Item */
         .transaction-item {
             background-color: var(--bg);
             border: 1px solid var(--border);
             border-radius: 8px;
             padding: 12px;
             display: flex;
-            flex-direction: column; /* Coluna no mobile */
+            flex-direction: column;
             gap: 12px;
             box-shadow: var(--shadow);
             transition: all 0.2s;
@@ -342,7 +342,7 @@
             display: flex;
             gap: 8px;
             width: 100%;
-            flex-wrap: wrap; /* Permite quebrar linha se necessário */
+            flex-wrap: wrap;
         }
 
         .transaction-actions .btn {
@@ -352,7 +352,6 @@
             font-size: 11px;
         }
 
-        /* Desktop Adjustments */
         @media (min-width: 600px) {
             .transaction-item {
                 flex-direction: row;
@@ -555,10 +554,52 @@
         }
 
         #toast.show { opacity: 1; }
+
+        /* Loading Overlay */
+        #loadingOverlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(255, 255, 255, 0.8);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 3000;
+            visibility: hidden;
+            opacity: 0;
+            transition: all 0.3s;
+        }
+
+        #loadingOverlay.active {
+            visibility: visible;
+            opacity: 1;
+        }
+
+        .spinner {
+            width: 40px;
+            height: 40px;
+            border: 4px solid var(--border);
+            border-top: 4px solid var(--primary);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin-bottom: 12px;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
     </style>
 </head>
 <body>
     <div id="toast"></div>
+    <div id="loadingOverlay">
+        <div class="spinner"></div>
+        <p id="loadingText">Processando...</p>
+    </div>
     
     <header class="header">
         <div class="header-content">
@@ -678,6 +719,13 @@
                     <small style="color: var(--text-secondary); font-size: 11px;">Apenas para Pendentes. Lançará o valor nos próximos meses.</small>
                 </div>
 
+                <div id="editFutureGroup" class="form-group hidden">
+                    <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
+                        <input type="checkbox" id="editFuture" style="width: auto;">
+                        <span>Aplicar alteração em todas as parcelas futuras?</span>
+                    </label>
+                </div>
+
                 <div class="form-actions">
                     <button type="button" class="btn btn-secondary" id="formCancel">Cancelar</button>
                     <button type="submit" class="btn btn-primary">Salvar</button>
@@ -739,7 +787,7 @@
                 editingId: null,
                 editingType: null,
                 editingCategory: null,
-                activeDetail: null, // { type, category }
+                activeDetail: null,
                 allYears: [],
                 confirmTarget: null,
                 customCategories: { receita: [], gasto: [], pendente: [] }
@@ -820,10 +868,15 @@
 
             async loadYearData() {
                 if (!this.state.selectedYear) return;
-                const response = await fetch(`${FIREBASE_URL}${FIREBASE_PATH}/${this.state.selectedYear}.json`);
-                this.state.data = await response.json();
-                this.updateMonthSelect();
-                this.renderData();
+                this.showLoading('Carregando dados...');
+                try {
+                    const response = await fetch(`${FIREBASE_URL}${FIREBASE_PATH}/${this.state.selectedYear}.json`);
+                    this.state.data = await response.json();
+                    this.updateMonthSelect();
+                    this.renderData();
+                } finally {
+                    this.hideLoading();
+                }
             },
 
             updateMonthSelect() {
@@ -847,7 +900,6 @@
                 this.renderCategoryView('gastos', monthData.gastos);
                 this.renderCategoryView('pendentes', monthData.pendentes);
                 
-                // Se houver um detalhe aberto, atualiza ele também
                 if (this.state.activeDetail) {
                     this.renderDetailView(this.state.activeDetail.type, this.state.activeDetail.category);
                 }
@@ -873,7 +925,6 @@
                         <h3>Receitas</h3>
                         <div class="value">+${this.formatCurrency(income)}</div>
                     </div>
-                    
                     <div class="summary-card gastos" onclick="app.switchTab('gastos')">
                         <h3>Gastos</h3>
                         <div class="value">-${this.formatCurrency(expense)}</div>
@@ -905,7 +956,7 @@
                     }
                 });
 
-                const categories = Object.values(grouped);
+                const categories = Object.values(grouped).sort((a, b) => a.name.localeCompare(b.name));
                 if (categories.length === 0) {
                     container.innerHTML = '<div class="empty-state">Nenhum item</div>';
                     return;
@@ -934,14 +985,12 @@
             askConfirmPayAll(event, category) {
                 event.stopPropagation();
                 this.state.confirmTarget = { action: 'payAll', category };
-                
                 document.getElementById('confirmTitle').textContent = 'Pagar Tudo';
                 document.getElementById('confirmMessage').textContent = `Deseja marcar TODOS os lançamentos da categoria "${category}" como pagos?`;
                 const btn = document.getElementById('confirmActionButton');
                 btn.className = 'btn btn-primary';
                 btn.textContent = 'Pagar Tudo';
                 btn.onclick = () => this.executeConfirmedAction();
-                
                 document.getElementById('confirmModal').classList.add('active');
             },
 
@@ -978,9 +1027,14 @@
                     return;
                 }
                 
-                all.sort((a, b) => this.parseDate(b.dia) - this.parseDate(a.dia));
+                // Ordenação: Data (descendente) e depois Descrição (ascendente)
+                all.sort((a, b) => {
+                    const dateDiff = this.parseDate(b.dia) - this.parseDate(a.dia);
+                    if (dateDiff !== 0) return dateDiff;
+                    return a.descricao.localeCompare(b.descricao);
+                });
+
                 const color = type === 'receitas' ? 'income' : type === 'gastos' ? 'expense' : 'pending';
-                
                 container.innerHTML = all.map(t => `
                     <div class="transaction-item">
                         <div class="transaction-header">
@@ -1011,7 +1065,6 @@
                 btn.className = `btn ${btnClass}`;
                 btn.textContent = action === 'pay' ? 'Pagar' : 'Deletar';
                 btn.onclick = () => this.executeConfirmedAction();
-                
                 document.getElementById('confirmModal').classList.add('active');
             },
 
@@ -1019,6 +1072,7 @@
 
             async executeConfirmedAction() {
                 const { action, type, category, id } = this.state.confirmTarget;
+                this.closeConfirmModal();
                 if (action === 'pay') {
                     await this.markAsPaid(type, category, id);
                 } else if (action === 'payAll') {
@@ -1026,24 +1080,22 @@
                 } else {
                     await this.confirmDelete(type, category, id);
                 }
-                this.closeConfirmModal();
             },
 
             async markCategoryAsPaid(category) {
+                this.showLoading('Processando pagamentos...');
                 try {
                     const monthData = this.state.data.meses[this.state.selectedMonthIndex];
                     const items = monthData.pendentes.categorias[category];
-                    
                     if (!items) return;
 
+                    const encodedCat = encodeURIComponent(category);
                     const promises = Object.entries(items).map(async ([id, t]) => {
-                        // Post to gastos
-                        await fetch(`${FIREBASE_URL}${FIREBASE_PATH}/${this.state.selectedYear}/meses/${this.state.selectedMonthIndex}/gastos/categorias/${category}.json`, { 
+                        await fetch(`${FIREBASE_URL}${FIREBASE_PATH}/${this.state.selectedYear}/meses/${this.state.selectedMonthIndex}/gastos/categorias/${encodedCat}.json`, { 
                             method: 'POST', 
                             body: JSON.stringify(t) 
                         });
-                        // Delete from pendentes
-                        await fetch(`${FIREBASE_URL}${FIREBASE_PATH}/${this.state.selectedYear}/meses/${this.state.selectedMonthIndex}/pendentes/categorias/${category}/${id}.json`, { 
+                        await fetch(`${FIREBASE_URL}${FIREBASE_PATH}/${this.state.selectedYear}/meses/${this.state.selectedMonthIndex}/pendentes/categorias/${encodedCat}/${id}.json`, { 
                             method: 'DELETE' 
                         });
                     });
@@ -1052,34 +1104,48 @@
                     this.showToast('Todos os itens pagos!', 'success');
                     await this.loadYearData();
                 } catch (error) {
-                    console.error('Erro ao pagar categoria:', error);
                     this.showToast('Erro ao processar pagamentos', 'error');
+                } finally {
+                    this.hideLoading();
+                }
+            },
+
+            async markAsPaid(type, category, id) {
+                this.showLoading('Marcando como pago...');
+                try {
+                    const monthData = this.state.data.meses[this.state.selectedMonthIndex];
+                    const t = monthData.pendentes.categorias[category][id];
+                    const encodedCat = encodeURIComponent(category);
+                    await fetch(`${FIREBASE_URL}${FIREBASE_PATH}/${this.state.selectedYear}/meses/${this.state.selectedMonthIndex}/gastos/categorias/${encodedCat}.json`, { method: 'POST', body: JSON.stringify(t) });
+                    await fetch(`${FIREBASE_URL}${FIREBASE_PATH}/${this.state.selectedYear}/meses/${this.state.selectedMonthIndex}/pendentes/categorias/${encodedCat}/${id}.json`, { method: 'DELETE' });
+                    this.showToast('Pago!', 'success');
+                    await this.loadYearData();
+                } finally {
+                    this.hideLoading();
+                }
+            },
+
+            async confirmDelete(type, category, id) {
+                this.showLoading('Deletando...');
+                try {
+                    const dataType = type === 'receitas' ? 'depositos' : type === 'gastos' ? 'gastos' : 'pendentes';
+                    const encodedCat = encodeURIComponent(category);
+                    await fetch(`${FIREBASE_URL}${FIREBASE_PATH}/${this.state.selectedYear}/meses/${this.state.selectedMonthIndex}/${dataType}/categorias/${encodedCat}/${id}.json`, { method: 'DELETE' });
+                    this.showToast('Deletado!', 'success');
+                    await this.loadYearData();
+                } finally {
+                    this.hideLoading();
                 }
             },
 
             editTransaction(type, category, id) { this.openModal(type, category, id); },
 
-            async confirmDelete(type, category, id) {
-                const dataType = type === 'receitas' ? 'depositos' : type === 'gastos' ? 'gastos' : 'pendentes';
-                await fetch(`${FIREBASE_URL}${FIREBASE_PATH}/${this.state.selectedYear}/meses/${this.state.selectedMonthIndex}/${dataType}/categorias/${category}/${id}.json`, { method: 'DELETE' });
-                this.showToast('Deletado!', 'success');
-                await this.loadYearData();
-                const detailView = document.getElementById(`${type}DetailView`);
-                if (detailView && !detailView.classList.contains('hidden')) this.renderDetailView(type, category);
-            },
-
-            async markAsPaid(type, category, id) {
-                const monthData = this.state.data.meses[this.state.selectedMonthIndex];
-                const t = monthData.pendentes.categorias[category][id];
-                await fetch(`${FIREBASE_URL}${FIREBASE_PATH}/${this.state.selectedYear}/meses/${this.state.selectedMonthIndex}/gastos/categorias/${category}.json`, { method: 'POST', body: JSON.stringify(t) });
-                await fetch(`${FIREBASE_URL}${FIREBASE_PATH}/${this.state.selectedYear}/meses/${this.state.selectedMonthIndex}/pendentes/categorias/${category}/${id}.json`, { method: 'DELETE' });
-                this.showToast('Pago!', 'success');
-                await this.loadYearData();
-                this.showCategoryView('pendentes');
-            },
-
             openModal(type = null, category = null, id = null) {
                 this.state.editingId = id; this.state.editingType = type; this.state.editingCategory = category;
+                const futureGroup = document.getElementById('editFutureGroup');
+                futureGroup.classList.add('hidden');
+                document.getElementById('editFuture').checked = false;
+
                 if (id) {
                     document.getElementById('modalTitle').textContent = 'Editar Lançamento';
                     const dataType = type === 'receitas' ? 'depositos' : type === 'gastos' ? 'gastos' : 'pendentes';
@@ -1090,6 +1156,10 @@
                     document.getElementById('transactionDescription').value = t.descricao;
                     document.getElementById('transactionDate').value = this.formatDateForInput(t.dia);
                     document.getElementById('transactionValue').value = (t.valor / 100).toFixed(2);
+                    
+                    if (type === 'pendentes' && t.descricao.includes('(')) {
+                        futureGroup.classList.remove('hidden');
+                    }
                 } else {
                     document.getElementById('modalTitle').textContent = 'Novo Lançamento';
                     document.getElementById('transactionForm').reset();
@@ -1113,7 +1183,7 @@
                 });
                 
                 const installmentsGroup = document.getElementById('installmentsGroup');
-                if (type === 'pendente') installmentsGroup.classList.remove('hidden');
+                if (type === 'pendente' && !this.state.editingId) installmentsGroup.classList.remove('hidden');
                 else installmentsGroup.classList.add('hidden');
             },
 
@@ -1133,63 +1203,69 @@
                 document.getElementById('fabButton').onclick = () => this.openModal();
                 document.getElementById('modalClose').onclick = () => this.closeModal();
                 document.getElementById('formCancel').onclick = () => this.closeModal();
-                
                 document.getElementById('transactionType').onchange = () => this.updateCategoryOptions();
 
                 document.getElementById('transactionForm').onsubmit = async (e) => {
                     e.preventDefault();
-                    const type = document.getElementById('transactionType').value;
-                    const category = document.getElementById('transactionCategory').value;
-                    const description = document.getElementById('transactionDescription').value;
-                    const date = document.getElementById('transactionDate').value;
-                    const value = Math.round(parseFloat(document.getElementById('transactionValue').value) * 100);
-                    const installments = parseInt(document.getElementById('transactionInstallments').value) || 1;
+                    this.showLoading('Salvando...');
+                    try {
+                        const type = document.getElementById('transactionType').value;
+                        const category = document.getElementById('transactionCategory').value;
+                        const description = document.getElementById('transactionDescription').value;
+                        const date = document.getElementById('transactionDate').value;
+                        const value = Math.round(parseFloat(document.getElementById('transactionValue').value) * 100);
+                        const installments = parseInt(document.getElementById('transactionInstallments').value) || 1;
+                        const editFuture = document.getElementById('editFuture').checked;
 
-                    const t = { descricao: description, dia: this.formatDateFromInput(date), valor: value };
-                    const dataType = type === 'receita' ? 'depositos' : type === 'gasto' ? 'gastos' : 'pendentes';
+                        const t = { descricao: description, dia: this.formatDateFromInput(date), valor: value };
+                        const dataType = type === 'receita' ? 'depositos' : type === 'gasto' ? 'gastos' : 'pendentes';
+                        const encodedCat = encodeURIComponent(category);
 
-                    if (this.state.editingId) {
-                        await fetch(`${FIREBASE_URL}${FIREBASE_PATH}/${this.state.selectedYear}/meses/${this.state.selectedMonthIndex}/${dataType}/categorias/${category}/${this.state.editingId}.json`, { method: 'PUT', body: JSON.stringify(t) });
-                    } else {
-                        if (type === 'pendente' && installments > 1) {
-                            const [year, month, day] = date.split('-').map(Number);
-                            for (let i = 0; i < installments; i++) {
-                                // Calcula a data correta para cada parcela
-                                let d = new Date(year, month - 1 + i, day);
-                                
-                                // Se o dia resultante for diferente do dia original, 
-                                // significa que o mês é mais curto (ex: 31 de Março -> 31 de Abril vira 1 de Maio)
-                                // Ajustamos para o último dia do mês correto
-                                if (d.getDate() !== day) {
-                                    d = new Date(year, month + i, 0);
+                        if (this.state.editingId) {
+                            await fetch(`${FIREBASE_URL}${FIREBASE_PATH}/${this.state.selectedYear}/meses/${this.state.selectedMonthIndex}/${dataType}/categorias/${encodedCat}/${this.state.editingId}.json`, { method: 'PUT', body: JSON.stringify(t) });
+                            
+                            if (editFuture && description.includes('(')) {
+                                const baseDesc = description.split(' (')[0];
+                                for (let i = 1; i <= 60; i++) { // Limite de 60 meses para segurança
+                                    let m = this.state.selectedMonthIndex + i;
+                                    let y = parseInt(this.state.selectedYear);
+                                    while (m > 11) { m -= 12; y++; }
+                                    
+                                    const resp = await fetch(`${FIREBASE_URL}${FIREBASE_PATH}/${y}/meses/${m}/pendentes/categorias/${encodedCat}.json`);
+                                    const monthItems = await resp.json();
+                                    if (monthItems) {
+                                        for (const [id, item] of Object.entries(monthItems)) {
+                                            if (item.descricao.startsWith(baseDesc)) {
+                                                const newT = { ...item, valor: value, descricao: baseDesc + ' (' + item.descricao.split(' (')[1] };
+                                                await fetch(`${FIREBASE_URL}${FIREBASE_PATH}/${y}/meses/${m}/pendentes/categorias/${encodedCat}/${id}.json`, { method: 'PUT', body: JSON.stringify(newT) });
+                                            }
+                                        }
+                                    }
                                 }
-
-                                let m = d.getMonth();
-                                let y = d.getFullYear();
-                                let formattedDay = String(d.getDate()).padStart(2, '0');
-                                let formattedMonth = String(m + 1).padStart(2, '0');
-                                let formattedYear = y;
-                                
-                                const installmentDesc = `${description} (${i + 1}/${installments})`;
-                                const instT = { 
-                                    ...t, 
-                                    descricao: installmentDesc,
-                                    dia: `${formattedDay}/${formattedMonth}/${formattedYear}`
-                                };
-                                
-                                await fetch(`${FIREBASE_URL}${FIREBASE_PATH}/${y}/meses/${m}/pendentes/categorias/${category}.json`, { 
-                                    method: 'POST', 
-                                    body: JSON.stringify(instT) 
-                                });
                             }
                         } else {
-                            await fetch(`${FIREBASE_URL}${FIREBASE_PATH}/${this.state.selectedYear}/meses/${this.state.selectedMonthIndex}/${dataType}/categorias/${category}.json`, { method: 'POST', body: JSON.stringify(t) });
+                            if (type === 'pendente' && installments > 1) {
+                                const [year, month, day] = date.split('-').map(Number);
+                                for (let i = 0; i < installments; i++) {
+                                    let d = new Date(year, month - 1 + i, day);
+                                    if (d.getDate() !== day) d = new Date(year, month + i, 0);
+                                    let m = d.getMonth();
+                                    let y = d.getFullYear();
+                                    const instT = { ...t, descricao: `${description} (${i + 1}/${installments})`, dia: `${String(d.getDate()).padStart(2, '0')}/${String(m + 1).padStart(2, '0')}/${y}` };
+                                    await fetch(`${FIREBASE_URL}${FIREBASE_PATH}/${y}/meses/${m}/pendentes/categorias/${encodedCat}.json`, { method: 'POST', body: JSON.stringify(instT) });
+                                }
+                            } else {
+                                await fetch(`${FIREBASE_URL}${FIREBASE_PATH}/${this.state.selectedYear}/meses/${this.state.selectedMonthIndex}/${dataType}/categorias/${encodedCat}.json`, { method: 'POST', body: JSON.stringify(t) });
+                            }
                         }
+                        this.showToast('Salvo!', 'success');
+                        this.closeModal();
+                        await this.loadYearData();
+                    } catch (error) {
+                        this.showToast('Erro ao salvar', 'error');
+                    } finally {
+                        this.hideLoading();
                     }
-
-                    this.showToast('Salvo!', 'success');
-                    this.closeModal();
-                    await this.loadYearData();
                 };
 
                 document.getElementById('categoryForm').onsubmit = async (e) => {
@@ -1211,7 +1287,11 @@
 
             formatCurrency(v) { return (v / 100).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }); },
             formatDateFromInput(d) { const [y, m, day] = d.split('-'); return `${day}/${m}/${y}`; },
-            formatDateForInput(d) { const [day, m, y] = d.split('/'); return `${y}-${m}-${day}`; },
+            formatDateForInput(d) { 
+                if (!d) return '';
+                const [day, m, y] = d.split('/'); 
+                return `${y}-${m}-${day}`; 
+            },
             parseDate(d) { const [day, m, y] = d.split('/'); return new Date(y, m - 1, day); },
             calculateTotal(data) {
                 if (!data || !data.categorias) return 0;
@@ -1228,6 +1308,15 @@
                 toast.style.backgroundColor = type === 'success' ? '#10b981' : '#ef4444';
                 toast.classList.add('show');
                 setTimeout(() => toast.classList.remove('show'), 3000);
+            },
+
+            showLoading(text = 'Processando...') {
+                document.getElementById('loadingText').textContent = text;
+                document.getElementById('loadingOverlay').classList.add('active');
+            },
+
+            hideLoading() {
+                document.getElementById('loadingOverlay').classList.remove('active');
             }
         };
 
