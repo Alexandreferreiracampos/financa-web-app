@@ -99,6 +99,60 @@
             background-color: var(--bg);
             cursor: pointer;
         }
+        /* Annual Summary Cards */
+        .annual-summary {
+            margin: 20px;
+            grid-template-columns: 1fr 1fr 1fr;
+            gap: 12px;
+            margin-bottom: 20px;
+        }
+
+        .annual-summary-card {
+            background-color: var(--bg);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 14px;
+            box-shadow: var(--shadow);
+            text-align: center;
+        }
+
+        .annual-summary-card h3 {
+            font-size: 11px;
+            text-transform: uppercase;
+            margin-bottom: 8px;
+            color: var(--text-secondary);
+        }
+
+        .annual-summary-card .value {
+            font-size: 1.2rem;
+            font-weight: 700;
+            font-family: 'Courier New', monospace;
+            word-break: break-all;
+        }
+
+        .annual-summary-card.income-card {
+            border-left: 4px solid #10b981;
+        }
+
+        .annual-summary-card.expense-card {
+            border-left: 4px solid #ef4444;
+        }
+
+        .annual-summary-card.balance-card {
+            border-left: 4px solid #3b82f6;
+        }
+
+        .annual-summary-card.income-card .value {
+            color: #10b981;
+        }
+
+        .annual-summary-card.expense-card .value {
+            color: #ef4444;
+        }
+
+        .annual-summary-card.balance-card .value {
+            color: #3b82f6;
+        }
 
         /* Search Bar */
         .search-container {
@@ -607,6 +661,7 @@
     <main class="main">
         <nav class="tabs">
             <button class="tab-button active" data-tab="resumo">Resumo</button>
+            <button class="tab-button" data-tab="resumoAnual">Resumo Anual</button>
             <button class="tab-button" data-tab="receitas">Receitas</button>
             <button class="tab-button" data-tab="gastos">Gastos</button>
             <button class="tab-button" data-tab="pendentes">Pendentes</button>
@@ -623,14 +678,19 @@
                 </div>
             </div>
 
+            <div id="resumoCategories" class="transactions"></div>
+        </div>
+
+        <!-- Tab Resumo Anual -->
+        <div id="resumoAnual" class="tab-content hidden">
+            <div id="annualSummaryContainer" class="annual-summary"></div>
+
             <div class="chart-container">
-                <div class="chart-title">Receitas vs Gastos (Ano)</div>
-                <div class="chart-wrapper" style="height: 200px;">
-                    <canvas id="monthlyChart"></canvas>
+                <div class="chart-title">Ganhos, Gastos e Saldo - Ano</div>
+                <div class="chart-wrapper" style="height: 300px;">
+                    <canvas id="annualChart"></canvas>
                 </div>
             </div>
-
-            <div id="resumoCategories" class="transactions"></div>
         </div>
 
         <!-- Tab Receitas -->
@@ -712,7 +772,7 @@
                 </div>
                 <div class="form-group">
                     <label>Valor</label>
-                    <input type="number" id="transactionValue" step="0.01" required placeholder="0,00">
+                    <input type="text" id="transactionValue" required placeholder="0,00">
                 </div>
                 <div id="installmentsGroup" class="form-group hidden">
                     <label>Parcelas</label>
@@ -769,7 +829,7 @@
                 editingId: null, editingType: null, editingCategory: null,
                 activeDetail: null, allYears: [], confirmTarget: null,
                 customCategories: { receita: [], gasto: [], pendente: [] },
-                charts: { category: null, monthly: null }
+                charts: { category: null, monthly: null, annual: null }
             },
 
             async init() {
@@ -840,6 +900,7 @@
                 this.renderCategoryView('gastos', monthData.gastos);
                 this.renderCategoryView('pendentes', monthData.pendentes);
                 this.renderCharts();
+                this.renderAnnualSummary();
                 if (this.state.activeDetail) this.renderDetailView(this.state.activeDetail.type, this.state.activeDetail.category);
 
                 const searchQuery = document.getElementById('searchInput').value;
@@ -857,6 +918,33 @@
                     <div class="summary-card expense" onclick="app.switchTab('pendentes')"><h3>Pendentes</h3><div class="value">-${this.formatCurrency(pending)}</div></div>
                     <div class="summary-card income" onclick="app.switchTab('receitas')"><h3>Receitas</h3><div class="value income-text">+${this.formatCurrency(income)}</div></div>
                     <div class="summary-card gastos" onclick="app.switchTab('gastos')"><h3>Gastos</h3><div class="value">-${this.formatCurrency(expense)}</div></div>
+                `;
+            },
+
+            renderAnnualSummary() {
+                if (!this.state.data || !this.state.data.meses) return;
+
+                let totalIncome = 0, totalExpense = 0;
+                for (let i = 0; i < 12; i++) {
+                    const m = this.state.data.meses[i] || {};
+                    totalIncome += this.calculateTotal(m.depositos);
+                    totalExpense += this.calculateTotal(m.gastos);
+                }
+                const totalBalance = totalIncome - totalExpense;
+
+                document.getElementById('annualSummaryContainer').innerHTML = `
+                    <div class="annual-summary-card income-card">
+                        <h3>Ganhos</h3>
+                        <div class="value">${this.formatCurrency(totalIncome)}</div>
+                    </div>
+                    <div class="annual-summary-card expense-card">
+                        <h3>Gastos</h3>
+                        <div class="value">-${this.formatCurrency(totalExpense)}</div>
+                    </div>
+                    <div class="annual-summary-card balance-card">
+                        <h3>Saldo</h3>
+                        <div class="value">${this.formatCurrency(totalBalance)}</div>
+                    </div>
                 `;
             },
 
@@ -905,21 +993,34 @@
                     monthlyExpense.push(this.calculateTotal(m.gastos) / 100);
                 }
 
-                if (this.state.charts.monthly) this.state.charts.monthly.destroy();
-                const ctxMonthly = document.getElementById('monthlyChart');
-                if (ctxMonthly) {
-                    this.state.charts.monthly = new Chart(ctxMonthly, {
+
+                // Render Annual Chart
+                const annualLabels = MONTHS, annualIncome = [], annualExpense = [], annualBalance = [];
+                for (let i = 0; i < 12; i++) {
+                    const m = this.state.data.meses[i] || {};
+                    const income = this.calculateTotal(m.depositos) / 100;
+                    const expense = this.calculateTotal(m.gastos) / 100;
+                    annualIncome.push(income);
+                    annualExpense.push(expense);
+                    annualBalance.push(income - expense);
+                }
+
+                if (this.state.charts.annual) this.state.charts.annual.destroy();
+                const ctxAnnual = document.getElementById('annualChart');
+                if (ctxAnnual) {
+                    this.state.charts.annual = new Chart(ctxAnnual, {
                         type: 'bar',
                         data: {
-                            labels: monthlyLabels.map(m => m.substring(0, 3)),
+                            labels: annualLabels.map(m => m.substring(0, 3)),
                             datasets: [
-                                { label: 'Receitas', data: monthlyIncome, backgroundColor: '#10b981' },
-                                { label: 'Gastos', data: monthlyExpense, backgroundColor: '#ef4444' }
+                                { label: 'Receitas', data: annualIncome, backgroundColor: '#10b981' },
+                                { label: 'Gastos', data: annualExpense, backgroundColor: '#ef4444' },
+                                { label: 'Saldo', data: annualBalance, backgroundColor: '#3b82f6' }
                             ]
                         },
                         options: {
                             scales: { y: { beginAtZero: true } },
-                            plugins: { legend: { display: false } },
+                            plugins: { legend: { display: true, position: 'top' } },
                             maintainAspectRatio: false,
                             responsive: true
                         }
@@ -1001,6 +1102,8 @@
                 `).join('');
             },
 
+            
+
             async handleSearch(query, skipTabSwitch = false) {
                 if (!query) { if (!skipTabSwitch) this.renderData(); return; }
                 const results = [];
@@ -1021,6 +1124,8 @@
                         });
                     }
                 });
+
+                
 
                 const container = document.getElementById('resumoCategories');
                 if (!skipTabSwitch) this.switchTab('resumo');
@@ -1085,7 +1190,11 @@
                     const category = document.getElementById('transactionCategory').value.trim();
                     const description = document.getElementById('transactionDescription').value.trim();
                     const date = document.getElementById('transactionDate').value;
-                    const value = Math.round(parseFloat(document.getElementById('transactionValue').value) * 100);
+                    let rawValue = document.getElementById('transactionValue').value;
+
+rawValue = rawValue.replace(/\./g, '').replace(',', '.');
+
+const value = Math.round(parseFloat(rawValue) * 100);
                     const installments = parseInt(document.getElementById('transactionInstallments').value) || 1;
                     const isRecurrent = document.getElementById('isRecurrent').checked;
                     const editFuture = document.getElementById('editFuture').checked;
@@ -1270,6 +1379,23 @@
         };
 
         app.init();
+
+        const inputMoney = document.getElementById('transactionValue');
+
+inputMoney.addEventListener('input', (e) => {
+    let value = e.target.value.replace(/\D/g, '');
+
+    if (value === '') {
+        e.target.value = '';
+        return;
+    }
+
+    value = (parseInt(value) / 100).toFixed(2);
+    value = value.replace('.', ',');
+    value = value.replace(/\B(?=(\d{3})+(?!\d))/g, '.');
+
+    e.target.value = value;
+});
     </script>
 </body>
 
