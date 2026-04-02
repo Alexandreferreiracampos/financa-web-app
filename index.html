@@ -180,9 +180,20 @@
         }
 
         .summary-card .value {
-            font-size: 24px;
+            font-size: 1.25rem; /* Usando rem para melhor escala */
             font-weight: 700;
             font-family: 'Courier New', monospace;
+            word-break: break-all; /* Evita quebra de layout com valores gigantes */
+            line-height: 1.2;
+        }
+
+        @media (max-width: 360px) {
+            .summary-card .value {
+                font-size: 1.1rem;
+            }
+            .summary-card {
+                padding: 12px;
+            }
         }
 
         .summary-card.income .value {
@@ -228,12 +239,17 @@
 
         .category-info {
             flex: 1;
+            min-width: 0; /* Permite que o flex-item encolha corretamente */
+            margin-right: 8px;
         }
-
+        
         .category-name {
             font-size: 14px;
             font-weight: 500;
             margin-bottom: 4px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis; /* Corta nomes de categoria muito longos com ... */
         }
 
         .category-count {
@@ -249,11 +265,12 @@
         }
 
         .category-value {
-            font-size: 16px;
+            font-size: 14px;
             font-weight: 700;
             font-family: 'Courier New', monospace;
             text-align: right;
-            min-width: 100px;
+            min-width: 80px;
+            word-break: break-all;
         }
 
         .category-value.income { color: var(--primary); }
