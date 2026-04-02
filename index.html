@@ -440,7 +440,10 @@
     <!-- Header -->
     <header class="header">
         <div class="header-content">
-            <h1>💰 Financeiro</h1>
+            <div style="display: flex; align-items: center; gap: 8px;">
+                <h1>💰 Financeiro</h1>
+                <button id="installBtn" class="btn btn-sm btn-primary hidden" style="padding: 4px 8px; font-size: 10px;">Instalar App</button>
+            </div>
             <div class="header-controls">
                 <select id="yearSelect">
                     <option value="">Carregando...</option>
@@ -1038,6 +1041,37 @@
                 });
             }
         };
+
+        let deferredPrompt;
+        const installBtn = document.getElementById('installBtn');
+
+        window.addEventListener('beforeinstallprompt', (e) => {
+            // Impede que o Chrome mostre o banner automático
+            e.preventDefault();
+            // Guarda o evento para ser disparado depois
+            deferredPrompt = e;
+            // Mostra o botão de instalação manual
+            installBtn.classList.remove('hidden');
+        });
+
+        installBtn.addEventListener('click', async () => {
+            if (deferredPrompt) {
+                // Mostra o prompt de instalação
+                deferredPrompt.prompt();
+                // Espera pela escolha do usuário
+                const { outcome } = await deferredPrompt.userChoice;
+                console.log(`Usuário escolheu: ${outcome}`);
+                // Limpa o prompt
+                deferredPrompt = null;
+                // Esconde o botão
+                installBtn.classList.add('hidden');
+            }
+        });
+
+        window.addEventListener('appinstalled', (evt) => {
+            console.log('App instalado com sucesso!');
+            installBtn.classList.add('hidden');
+        });
 
         document.addEventListener('DOMContentLoaded', () => {
             app.init();
