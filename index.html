@@ -1,0 +1,1056 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#10b981">
+    <link rel="apple-touch-icon" href="https://cdn-icons-png.flaticon.com/512/2489/2489756.png">
+    <title>Gerenciador Financeiro</title>
+    
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+    
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --primary: #10b981;
+            --danger: #ef4444;
+            --warning: #f59e0b;
+            --bg: #ffffff;
+            --bg-secondary: #f8f9fa;
+            --text: #1a1a1a;
+            --text-secondary: #6b7280;
+            --border: #e5e7eb;
+            --shadow: 0 1px 3px rgba(0, 0, 0, 0.1), 0 1px 2px rgba(0, 0, 0, 0.06);
+            --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: var(--bg-secondary);
+            color: var(--text);
+            line-height: 1.5;
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+        }
+
+        h1, h2, h3, h4, h5, h6 {
+            font-family: 'Poppins', sans-serif;
+            font-weight: 700;
+        }
+
+        .container {
+            max-width: 100%;
+            margin: 0 auto;
+            padding: 0;
+        }
+
+        /* Header */
+        .header {
+            background-color: var(--bg);
+            border-bottom: 1px solid var(--border);
+            padding: 16px;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            box-shadow: var(--shadow);
+        }
+
+        .header-content {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .header h1 {
+            font-size: 24px;
+            margin: 0;
+            color: var(--text);
+        }
+
+        .header-controls {
+            display: flex;
+            gap: 8px;
+            align-items: center;
+        }
+
+        select {
+            padding: 8px 12px;
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            font-family: 'Inter', sans-serif;
+            font-size: 14px;
+            background-color: var(--bg);
+            color: var(--text);
+            cursor: pointer;
+            transition: border-color 0.2s;
+        }
+
+        select:focus {
+            outline: none;
+            border-color: var(--primary);
+        }
+
+        /* Main Content */
+        .main {
+            padding: 16px;
+            padding-bottom: 100px;
+        }
+
+        /* Tabs */
+        .tabs {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 20px;
+            border-bottom: 1px solid var(--border);
+            overflow-x: auto;
+            -webkit-overflow-scrolling: touch;
+        }
+
+        .tab-button {
+            padding: 12px 16px;
+            border: none;
+            background: none;
+            color: var(--text-secondary);
+            font-family: 'Inter', sans-serif;
+            font-size: 14px;
+            font-weight: 500;
+            cursor: pointer;
+            border-bottom: 2px solid transparent;
+            transition: all 0.2s;
+            white-space: nowrap;
+        }
+
+        .tab-button.active {
+            color: var(--primary);
+            border-bottom-color: var(--primary);
+        }
+
+        .tab-button:hover {
+            color: var(--text);
+        }
+
+        /* Summary Cards - RESTAURADOS ESTILOS ORIGINAIS */
+        .summary {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+            margin-bottom: 20px;
+        }
+
+        .summary-card {
+            background-color: var(--bg);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 16px;
+            box-shadow: var(--shadow);
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+
+        .summary-card:active {
+            transform: scale(0.98);
+            box-shadow: none;
+        }
+
+        .summary-card.balance {
+            background: linear-gradient(135deg, var(--primary) 0%, #059669 100%);
+            color: rgb(255, 255, 255);
+            border: none;
+        }
+
+        .summary-card h3 {
+            font-size: 12px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 8px;
+            opacity: 0.9;
+        }
+
+        .summary-card .value {
+            font-size: 24px;
+            font-weight: 700;
+            font-family: 'Courier New', monospace;
+        }
+
+        .summary-card.income .value {
+            color: var(--primary);
+        }
+
+        .summary-card.expense {
+            background: linear-gradient(135deg, var(--warning) 0%, #fda10c 100%);
+            color: rgb(255, 255, 255);
+            border: none;
+        }
+
+        .summary-card.gastos {
+            background: linear-gradient(135deg, var(--danger) 0%, #fc0d0d 100%);
+            color: rgb(255, 255, 255);
+            border: none;
+        }
+
+        /* Transactions/Categories List */
+        .transactions {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .category-item {
+            background-color: var(--bg);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 12px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: var(--shadow);
+            transition: all 0.2s;
+            cursor: pointer;
+        }
+
+        .category-item:active {
+            background-color: var(--bg-secondary);
+        }
+
+        .category-info {
+            flex: 1;
+        }
+
+        .category-name {
+            font-size: 14px;
+            font-weight: 500;
+            margin-bottom: 4px;
+        }
+
+        .category-count {
+            font-size: 12px;
+            color: var(--text-secondary);
+        }
+
+        .category-value {
+            font-size: 16px;
+            font-weight: 700;
+            font-family: 'Courier New', monospace;
+            text-align: right;
+            min-width: 100px;
+        }
+
+        .category-value.income { color: var(--primary); }
+        .category-value.expense { color: var(--danger); }
+        .category-value.pending { color: var(--warning); }
+
+        /* Transaction Item (Detalhes) - AJUSTE RESPONSIVO */
+        .transaction-item {
+            background-color: var(--bg);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 12px;
+            display: flex;
+            flex-direction: column; /* Coluna no mobile */
+            gap: 12px;
+            box-shadow: var(--shadow);
+            transition: all 0.2s;
+        }
+
+        .transaction-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            width: 100%;
+        }
+
+        .transaction-info {
+            flex: 1;
+        }
+
+        .transaction-description {
+            font-size: 14px;
+            font-weight: 500;
+            margin-bottom: 4px;
+            word-break: break-word;
+        }
+
+        .transaction-date {
+            font-size: 12px;
+            color: var(--text-secondary);
+        }
+
+        .transaction-value {
+            font-size: 16px;
+            font-weight: 700;
+            font-family: 'Courier New', monospace;
+            text-align: right;
+            margin-left: 12px;
+        }
+
+        .transaction-actions {
+            display: flex;
+            gap: 8px;
+            width: 100%;
+            flex-wrap: wrap; /* Permite quebrar linha se necessário */
+        }
+
+        .transaction-actions .btn {
+            flex: 1;
+            min-width: 80px;
+            padding: 8px 4px;
+            font-size: 11px;
+        }
+
+        /* Desktop Adjustments */
+        @media (min-width: 600px) {
+            .transaction-item {
+                flex-direction: row;
+                align-items: center;
+            }
+            .transaction-actions {
+                width: auto;
+            }
+            .transaction-actions .btn {
+                flex: none;
+                padding: 6px 12px;
+                font-size: 12px;
+            }
+        }
+
+        /* Buttons */
+        .btn {
+            padding: 12px 16px;
+            border: none;
+            border-radius: 6px;
+            font-family: 'Inter', sans-serif;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+        }
+
+        .btn-primary { background-color: var(--primary); color: white; }
+        .btn-danger { background-color: var(--danger); color: white; }
+        .btn-warning { background-color: var(--warning); color: white; }
+        .btn-secondary { background-color: var(--bg-secondary); color: var(--text); border: 1px solid var(--border); }
+
+        .btn:active { opacity: 0.9; transform: scale(0.98); }
+
+        /* Modal */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: rgba(0, 0, 0, 0.5);
+            z-index: 1000;
+            align-items: flex-end;
+        }
+
+        .modal.active { display: flex; }
+
+        .modal-content {
+            background-color: var(--bg);
+            width: 100%;
+            border-radius: 16px 16px 0 0;
+            padding: 24px 16px;
+            max-height: 90vh;
+            overflow-y: auto;
+            animation: slideUp 0.3s ease-out;
+        }
+
+        @keyframes slideUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .modal-header h2 { font-size: 20px; margin: 0; }
+
+        .modal-close { background: none; border: none; font-size: 24px; cursor: pointer; color: var(--text-secondary); }
+
+        /* Form */
+        .form-group { margin-bottom: 16px; }
+        .form-group label { display: block; font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 8px; color: var(--text-secondary); }
+        .form-group input, .form-group select, .form-group textarea { width: 100%; padding: 12px; border: 1px solid var(--border); border-radius: 6px; font-family: 'Inter', sans-serif; font-size: 14px; color: var(--text); }
+        .form-group input:focus, .form-group select:focus, .form-group textarea:focus { outline: none; border-color: var(--primary); box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.1); }
+        .form-actions { display: flex; gap: 12px; margin-top: 24px; }
+        .form-actions button { flex: 1; }
+
+        /* Empty State */
+        .empty-state { text-align: center; padding: 40px 20px; color: var(--text-secondary); }
+        .empty-state-icon { font-size: 48px; margin-bottom: 12px; }
+        .empty-state-text { font-size: 14px; }
+
+        /* Loading */
+        .loading { display: flex; justify-content: center; align-items: center; padding: 40px; }
+        .spinner { border: 3px solid var(--border); border-top: 3px solid var(--primary); border-radius: 50%; width: 40px; height: 40px; animation: spin 1s linear infinite; }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+
+        /* Breadcrumb */
+        .breadcrumb { display: flex; align-items: center; gap: 8px; margin-bottom: 16px; font-size: 14px; color: var(--text-secondary); }
+        .breadcrumb-back { background: none; border: none; color: var(--primary); cursor: pointer; font-size: 18px; padding: 0; }
+
+        /* Tab Content */
+        .tab-content { display: none; }
+        .tab-content.active { display: block; }
+
+        /* FAB Button */
+        .fab { position: fixed; bottom: 20px; right: 20px; width: 56px; height: 56px; border-radius: 50%; background-color: var(--primary); color: white; border: none; font-size: 28px; font-weight: bold; cursor: pointer; box-shadow: var(--shadow-lg); transition: all 0.2s; z-index: 500; }
+        .fab:active { transform: scale(0.95); }
+
+        .hidden { display: none !important; }
+
+        /* Toast Notification */
+        .toast { position: fixed; bottom: 20px; left: 20px; right: 20px; background-color: var(--text); color: white; padding: 16px; border-radius: 6px; box-shadow: var(--shadow-lg); animation: slideUp 0.3s ease-out; z-index: 2000; }
+        .toast.success { background-color: var(--primary); }
+        .toast.error { background-color: var(--danger); }
+
+        /* Category Input Group */
+        .category-input-group { display: flex; gap: 8px; align-items: center; }
+        .btn-add-category { background-color: var(--primary); color: white; border: none; border-radius: 6px; width: 40px; height: 40px; font-size: 20px; cursor: pointer; display: flex; justify-content: center; align-items: center; }
+
+        @media (max-width: 480px) {
+            .header h1 { font-size: 20px; }
+            .summary-card .value { font-size: 20px; }
+        }
+    </style>
+</head>
+<body>
+    <!-- Header -->
+    <header class="header">
+        <div class="header-content">
+            <h1>💰 Financeiro</h1>
+            <div class="header-controls">
+                <select id="yearSelect">
+                    <option value="">Carregando...</option>
+                </select>
+                <select id="monthSelect">
+                    <option value="">Mês</option>
+                </select>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="main">
+        <!-- Tabs -->
+        <div class="tabs">
+            <button class="tab-button active" data-tab="resumo">Resumo</button>
+            <button class="tab-button" data-tab="receitas">Receitas</button>
+            <button class="tab-button" data-tab="gastos">Gastos</button>
+            <button class="tab-button" data-tab="pendentes">Pendentes</button>
+        </div>
+
+        <!-- Resumo Tab -->
+        <div id="resumo" class="tab-content active">
+            <div class="summary" id="summaryContainer">
+                <div class="loading">
+                    <div class="spinner"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Receitas Tab -->
+        <div id="receitas" class="tab-content">
+            <div id="receitasView">
+                <div id="receitasCategoriesContainer" class="transactions"></div>
+            </div>
+            <div id="receitasDetailView" class="hidden">
+                <div class="breadcrumb">
+                    <button class="breadcrumb-back" onclick="app.showCategoryView('receitas')">← Voltar</button>
+                    <span id="receitasDetailTitle"></span>
+                </div>
+                <div id="receitasDetailContainer" class="transactions"></div>
+            </div>
+        </div>
+
+        <!-- Gastos Tab -->
+        <div id="gastos" class="tab-content">
+            <div id="gastosView">
+                <div id="gastosCategoriesContainer" class="transactions"></div>
+            </div>
+            <div id="gastosDetailView" class="hidden">
+                <div class="breadcrumb">
+                    <button class="breadcrumb-back" onclick="app.showCategoryView('gastos')">← Voltar</button>
+                    <span id="gastosDetailTitle"></span>
+                </div>
+                <div id="gastosDetailContainer" class="transactions"></div>
+            </div>
+        </div>
+
+        <!-- Pendentes Tab -->
+        <div id="pendentes" class="tab-content">
+            <div id="pendentesView">
+                <div id="pendentesCategoriesContainer" class="transactions"></div>
+            </div>
+            <div id="pendentesDetailView" class="hidden">
+                <div class="breadcrumb">
+                    <button class="breadcrumb-back" onclick="app.showCategoryView('pendentes')">← Voltar</button>
+                    <span id="pendentesDetailTitle"></span>
+                </div>
+                <div id="pendentesDetailContainer" class="transactions"></div>
+            </div>
+        </div>
+    </main>
+
+    <!-- FAB Button -->
+    <button class="fab" id="fabButton" title="Adicionar lançamento">+</button>
+
+    <!-- Modal para Adicionar/Editar Lançamento -->
+    <div class="modal" id="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 id="modalTitle">Novo Lançamento</h2>
+                <button class="modal-close" id="modalClose">&times;</button>
+            </div>
+
+            <form id="transactionForm">
+                <div class="form-group">
+                    <label for="transactionType">Tipo</label>
+                    <select id="transactionType" required>
+                        <option value="receita">Receita</option>
+                        <option value="gasto">Gasto</option>
+                        <option value="pendente">Pendente</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label for="transactionCategory">Categoria</label>
+                    <div class="category-input-group">
+                        <select id="transactionCategory" required>
+                            <option value="">Selecione uma categoria</option>
+                        </select>
+                        <button type="button" class="btn-add-category" onclick="app.openCategoryModal()" title="Nova Categoria">+</button>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label for="transactionDescription">Descrição</label>
+                    <input type="text" id="transactionDescription" placeholder="Ex: Salário" required>
+                </div>
+
+                <div class="form-group">
+                    <label for="transactionDate">Data</label>
+                    <input type="date" id="transactionDate" required>
+                </div>
+
+                <div class="form-group">
+                    <label for="transactionValue">Valor (R$)</label>
+                    <input type="number" id="transactionValue" placeholder="0.00" step="0.01" required>
+                </div>
+
+                <div class="form-group hidden" id="installmentsGroup">
+                    <label for="transactionInstallments">Número de Parcelas (Opcional)</label>
+                    <input type="number" id="transactionInstallments" placeholder="Ex: 12" min="1" step="1">
+                    <small style="color: var(--text-secondary); font-size: 11px;">Apenas para Pendentes. Lançará o valor nos próximos meses.</small>
+                </div>
+
+                <div class="form-actions">
+                    <button type="button" class="btn btn-secondary" id="formCancel">Cancelar</button>
+                    <button type="submit" class="btn btn-primary">Salvar</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Modal para Nova Categoria -->
+    <div class="modal" id="categoryModal">
+        <div class="modal-content" style="max-height: auto; border-radius: 12px; margin: auto;">
+            <div class="modal-header">
+                <h2 id="categoryModalTitle">Nova Categoria</h2>
+                <button class="modal-close" onclick="app.closeCategoryModal()">&times;</button>
+            </div>
+            <form id="categoryForm">
+                <div class="form-group">
+                    <label for="newCategoryName">Nome da Categoria</label>
+                    <input type="text" id="newCategoryName" placeholder="Ex: Alimentação" required>
+                </div>
+                <div class="form-actions">
+                    <button type="button" class="btn btn-secondary" onclick="app.closeCategoryModal()">Cancelar</button>
+                    <button type="submit" class="btn btn-primary">Salvar</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Modal para Confirmar Exclusão/Pagamento -->
+    <div class="modal" id="confirmModal">
+        <div class="modal-content" style="max-height: auto; border-radius: 12px; margin: auto;">
+            <div class="modal-header">
+                <h2 id="confirmTitle">Confirmar Ação</h2>
+                <button class="modal-close" onclick="app.closeConfirmModal()">&times;</button>
+            </div>
+            <p id="confirmMessage" style="margin-bottom: 20px;"></p>
+            <div class="form-actions">
+                <button type="button" class="btn btn-secondary" onclick="app.closeConfirmModal()">Cancelar</button>
+                <button type="button" class="btn btn-primary" id="confirmActionButton">Confirmar</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const FIREBASE_URL = 'https://financeiro-3ec62-default-rtdb.firebaseio.com';
+        const FIREBASE_PATH = '/anos';
+        const CATEGORIES_PATH = '/configuracoes/categorias';
+
+        const MONTHS = [
+            'Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho',
+            'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'
+        ];
+
+        const app = {
+            state: {
+                selectedYear: null,
+                selectedMonthIndex: null,
+                data: null,
+                editingId: null,
+                editingType: null,
+                editingCategory: null,
+                allYears: [],
+                confirmTarget: null,
+                customCategories: { receita: [], gasto: [], pendente: [] }
+            },
+
+            async init() {
+                try {
+                    const now = new Date();
+                    const currentYear = now.getFullYear().toString();
+                    const currentMonthIndex = now.getMonth();
+
+                    await this.loadCustomCategories();
+                    await this.loadYears();
+                    
+                    if (!this.state.allYears.includes(currentYear)) {
+                        this.state.allYears.push(currentYear);
+                        this.state.allYears.sort((a, b) => b - a);
+                        this.updateYearSelect();
+                    }
+
+                    this.state.selectedYear = currentYear;
+                    this.state.selectedMonthIndex = currentMonthIndex;
+                    document.getElementById('yearSelect').value = currentYear;
+                    
+                    this.setupEventListeners();
+                    await this.loadYearData();
+                    document.getElementById('monthSelect').value = currentMonthIndex;
+                    this.renderData();
+                } catch (error) {
+                    console.error('Erro ao inicializar:', error);
+                    this.showToast('Erro ao carregar dados', 'error');
+                }
+            },
+
+            async loadCustomCategories() {
+                try {
+                    const response = await fetch(`${FIREBASE_URL}${CATEGORIES_PATH}.json`);
+                    const data = await response.json();
+                    if (data) {
+                        this.state.customCategories = {
+                            receita: data.receita ? Object.values(data.receita) : [],
+                            gasto: data.gasto ? Object.values(data.gasto) : [],
+                            pendente: data.pendente ? Object.values(data.pendente) : []
+                        };
+                    } else {
+                        this.state.customCategories = {
+                            receita: ['Salários', 'Vales', 'Outros'],
+                            gasto: ['Mercado', 'Delivery', 'Outros'],
+                            pendente: ['Cartão crédito', 'Outros']
+                        };
+                        await this.saveAllCategories();
+                    }
+                } catch (error) {}
+            },
+
+            async saveAllCategories() {
+                await fetch(`${FIREBASE_URL}${CATEGORIES_PATH}.json`, { method: 'PUT', body: JSON.stringify(this.state.customCategories) });
+            },
+
+            updateYearSelect() {
+                const yearSelect = document.getElementById('yearSelect');
+                yearSelect.innerHTML = '';
+                this.state.allYears.forEach(year => {
+                    const option = document.createElement('option');
+                    option.value = year; option.textContent = year;
+                    yearSelect.appendChild(option);
+                });
+            },
+
+            async loadYears() {
+                const response = await fetch(`${FIREBASE_URL}${FIREBASE_PATH}.json`);
+                const years = await response.json();
+                if (years) {
+                    this.state.allYears = Object.keys(years).filter(k => !k.startsWith('.')).sort((a, b) => b - a);
+                    this.updateYearSelect();
+                }
+            },
+
+            async loadYearData() {
+                if (!this.state.selectedYear) return;
+                const response = await fetch(`${FIREBASE_URL}${FIREBASE_PATH}/${this.state.selectedYear}.json`);
+                this.state.data = await response.json();
+                this.updateMonthSelect();
+                this.renderData();
+            },
+
+            updateMonthSelect() {
+                const monthSelect = document.getElementById('monthSelect');
+                monthSelect.innerHTML = '';
+                MONTHS.forEach((name, i) => {
+                    const opt = document.createElement('option');
+                    opt.value = i; opt.textContent = name;
+                    monthSelect.appendChild(opt);
+                });
+            },
+
+            renderData() {
+                if (!this.state.data || !this.state.data.meses) return;
+                const monthData = this.state.data.meses[this.state.selectedMonthIndex] || {};
+                this.renderSummary(monthData);
+                this.renderCategoryView('receitas', monthData.depositos);
+                this.renderCategoryView('gastos', monthData.gastos);
+                this.renderCategoryView('pendentes', monthData.pendentes);
+            },
+
+            renderSummary(monthData) {
+                const container = document.getElementById('summaryContainer');
+                const income = this.calculateTotal(monthData.depositos);
+                const expense = this.calculateTotal(monthData.gastos);
+                const pending = this.calculateTotal(monthData.pendentes);
+                const balance = income - expense - pending;
+                
+                container.innerHTML = `
+                    <div class="summary-card balance">
+                        <h3>Saldo</h3>
+                        <div class="value">${this.formatCurrency(balance)}</div>
+                    </div>
+                    <div class="summary-card income" onclick="app.switchTab('receitas')">
+                        <h3>Receitas</h3>
+                        <div class="value">+${this.formatCurrency(income)}</div>
+                    </div>
+                    <div class="summary-card gastos" onclick="app.switchTab('gastos')">
+                        <h3>Gastos</h3>
+                        <div class="value">-${this.formatCurrency(expense)}</div>
+                    </div>
+                    <div class="summary-card expense" onclick="app.switchTab('pendentes')">
+                        <h3>Pendentes</h3>
+                        <div class="value">-${this.formatCurrency(pending)}</div>
+                    </div>
+                `;
+            },
+
+            switchTab(tabId) {
+                const btn = document.querySelector(`.tab-button[data-tab="${tabId}"]`);
+                if (btn) btn.click();
+            },
+
+            renderCategoryView(type, categoryData) {
+                const container = document.getElementById(`${type}CategoriesContainer`);
+                if (!categoryData || !categoryData.categorias) {
+                    container.innerHTML = '<div class="empty-state">Nenhum item</div>';
+                    return;
+                }
+                
+                const grouped = {};
+                Object.entries(categoryData.categorias).forEach(([raw, items]) => {
+                    const clean = raw.trim();
+                    let total = 0, count = 0;
+                    Object.values(items).forEach(t => { if (t.valor) { total += t.valor; count++; } });
+                    if (count > 0) {
+                        if (!grouped[clean]) grouped[clean] = { name: clean, total: 0, count: 0 };
+                        grouped[clean].total += total;
+                        grouped[clean].count += count;
+                    }
+                });
+
+                const categories = Object.values(grouped);
+                if (categories.length === 0) {
+                    container.innerHTML = '<div class="empty-state">Nenhum item</div>';
+                    return;
+                }
+
+                const color = type === 'receitas' ? 'income' : type === 'gastos' ? 'expense' : 'pending';
+                container.innerHTML = categories.map(cat => `
+                    <div class="category-item" onclick="app.showDetailView('${type}', '${cat.name}')">
+                        <div class="category-info">
+                            <div class="category-name">${cat.name}</div>
+                            <div class="category-count">${cat.count} lançamento(s)</div>
+                        </div>
+                        <div class="category-value ${color}">${type === 'receitas' ? '+' : '-'}${this.formatCurrency(cat.total)}</div>
+                    </div>
+                `).join('');
+            },
+
+            showDetailView(type, category) {
+                document.getElementById(`${type}View`).classList.add('hidden');
+                document.getElementById(`${type}DetailView`).classList.remove('hidden');
+                document.getElementById(`${type}DetailTitle`).textContent = category;
+                this.renderDetailView(type, category);
+            },
+
+            showCategoryView(type) {
+                document.getElementById(`${type}View`).classList.remove('hidden');
+                document.getElementById(`${type}DetailView`).classList.add('hidden');
+            },
+
+            renderDetailView(type, category) {
+                const container = document.getElementById(`${type}DetailContainer`);
+                const monthData = this.state.data.meses[this.state.selectedMonthIndex] || {};
+                const dataType = type === 'receitas' ? 'depositos' : type === 'gastos' ? 'gastos' : 'pendentes';
+                
+                const all = [];
+                if (monthData[dataType]?.categorias) {
+                    Object.entries(monthData[dataType].categorias).forEach(([raw, items]) => {
+                        if (raw.trim() === category.trim()) {
+                            Object.entries(items).forEach(([id, t]) => all.push({ id, ...t, type, category: raw }));
+                        }
+                    });
+                }
+                
+                if (all.length === 0) {
+                    container.innerHTML = '<div class="empty-state">Nenhum lançamento</div>';
+                    return;
+                }
+                
+                all.sort((a, b) => this.parseDate(b.dia) - this.parseDate(a.dia));
+                const color = type === 'receitas' ? 'income' : type === 'gastos' ? 'expense' : 'pending';
+                
+                container.innerHTML = all.map(t => `
+                    <div class="transaction-item">
+                        <div class="transaction-header">
+                            <div class="transaction-info">
+                                <div class="transaction-description">${t.descricao}</div>
+                                <div class="transaction-date">${t.dia}</div>
+                            </div>
+                            <div class="transaction-value ${color}">${type === 'receitas' ? '+' : '-'}${this.formatCurrency(t.valor)}</div>
+                        </div>
+                        <div class="transaction-actions">
+                            ${type === 'pendentes' ? `<button class="btn btn-warning" onclick="app.askConfirm('pay', '${type}', '${t.category}', '${t.id}', '${t.descricao}')">Pagar</button>` : ''}
+                            <button class="btn btn-secondary" onclick="app.editTransaction('${type}', '${t.category}', '${t.id}')">Editar</button>
+                            <button class="btn btn-danger" onclick="app.askConfirm('delete', '${type}', '${t.category}', '${t.id}', '${t.descricao}')">Deletar</button>
+                        </div>
+                    </div>
+                `).join('');
+            },
+
+            askConfirm(action, type, category, id, desc) {
+                this.state.confirmTarget = { action, type, category, id };
+                const title = action === 'pay' ? 'Confirmar Pagamento' : 'Confirmar Exclusão';
+                const message = action === 'pay' ? `Deseja marcar "${desc}" como pago?` : `Deseja realmente deletar "${desc}"?`;
+                const btnClass = action === 'pay' ? 'btn-primary' : 'btn-danger';
+                
+                document.getElementById('confirmTitle').textContent = title;
+                document.getElementById('confirmMessage').textContent = message;
+                const btn = document.getElementById('confirmActionButton');
+                btn.className = `btn ${btnClass}`;
+                btn.textContent = action === 'pay' ? 'Pagar' : 'Deletar';
+                btn.onclick = () => this.executeConfirmedAction();
+                
+                document.getElementById('confirmModal').classList.add('active');
+            },
+
+            closeConfirmModal() { document.getElementById('confirmModal').classList.remove('active'); },
+
+            async executeConfirmedAction() {
+                const { action, type, category, id } = this.state.confirmTarget;
+                if (action === 'pay') {
+                    await this.markAsPaid(type, category, id);
+                } else {
+                    await this.confirmDelete(type, category, id);
+                }
+                this.closeConfirmModal();
+            },
+
+            editTransaction(type, category, id) { this.openModal(type, category, id); },
+
+            async confirmDelete(type, category, id) {
+                const dataType = type === 'receitas' ? 'depositos' : type === 'gastos' ? 'gastos' : 'pendentes';
+                await fetch(`${FIREBASE_URL}${FIREBASE_PATH}/${this.state.selectedYear}/meses/${this.state.selectedMonthIndex}/${dataType}/categorias/${category}/${id}.json`, { method: 'DELETE' });
+                this.showToast('Deletado!', 'success');
+                await this.loadYearData();
+                const detailView = document.getElementById(`${type}DetailView`);
+                if (detailView && !detailView.classList.contains('hidden')) this.renderDetailView(type, category);
+            },
+
+            async markAsPaid(type, category, id) {
+                const monthData = this.state.data.meses[this.state.selectedMonthIndex];
+                const t = monthData.pendentes.categorias[category][id];
+                await fetch(`${FIREBASE_URL}${FIREBASE_PATH}/${this.state.selectedYear}/meses/${this.state.selectedMonthIndex}/gastos/categorias/${category}.json`, { method: 'POST', body: JSON.stringify(t) });
+                await fetch(`${FIREBASE_URL}${FIREBASE_PATH}/${this.state.selectedYear}/meses/${this.state.selectedMonthIndex}/pendentes/categorias/${category}/${id}.json`, { method: 'DELETE' });
+                this.showToast('Pago!', 'success');
+                await this.loadYearData();
+                this.showCategoryView('pendentes');
+            },
+
+            openModal(type = null, category = null, id = null) {
+                this.state.editingId = id; this.state.editingType = type; this.state.editingCategory = category;
+                if (id) {
+                    document.getElementById('modalTitle').textContent = 'Editar Lançamento';
+                    const dataType = type === 'receitas' ? 'depositos' : type === 'gastos' ? 'gastos' : 'pendentes';
+                    const t = this.state.data.meses[this.state.selectedMonthIndex][dataType].categorias[category][id];
+                    document.getElementById('transactionType').value = type === 'receitas' ? 'receita' : type === 'gastos' ? 'gasto' : 'pendente';
+                    this.updateCategoryOptions();
+                    document.getElementById('transactionCategory').value = category;
+                    document.getElementById('transactionDescription').value = t.descricao;
+                    document.getElementById('transactionDate').value = this.formatDateForInput(t.dia);
+                    document.getElementById('transactionValue').value = (t.valor / 100).toFixed(2);
+                } else {
+                    document.getElementById('modalTitle').textContent = 'Novo Lançamento';
+                    document.getElementById('transactionForm').reset();
+                    document.getElementById('transactionDate').valueAsDate = new Date();
+                    this.updateCategoryOptions();
+                }
+                document.getElementById('modal').classList.add('active');
+            },
+
+            closeModal() { document.getElementById('modal').classList.remove('active'); },
+
+            updateCategoryOptions() {
+                const type = document.getElementById('transactionType').value;
+                const select = document.getElementById('transactionCategory');
+                select.innerHTML = '<option value="">Selecione</option>';
+                (this.state.customCategories[type] || []).forEach(c => {
+                    const opt = document.createElement('option'); opt.value = opt.textContent = c;
+                    select.appendChild(opt);
+                });
+            },
+
+            async handleFormSubmit(e) {
+                e.preventDefault();
+                const type = document.getElementById('transactionType').value;
+                const category = document.getElementById('transactionCategory').value.trim();
+                const desc = document.getElementById('transactionDescription').value.trim();
+                const date = document.getElementById('transactionDate').value;
+                const value = Math.round(parseFloat(document.getElementById('transactionValue').value) * 100);
+                const installments = parseInt(document.getElementById('transactionInstallments').value) || 1;
+
+                const dateStr = this.formatDateFromInput(date);
+                const [d, m, y] = dateStr.split('/');
+                let curM = parseInt(m) - 1, curY = parseInt(y);
+                const dataType = type === 'receita' ? 'depositos' : type === 'gasto' ? 'gastos' : 'pendentes';
+
+                if (this.state.editingId) {
+                    const oldType = this.state.editingType === 'receitas' ? 'depositos' : this.state.editingType === 'gastos' ? 'gastos' : 'pendentes';
+                    if (this.state.editingCategory !== category || this.state.selectedMonthIndex !== curM || this.state.selectedYear !== y || oldType !== dataType) {
+                        await fetch(`${FIREBASE_URL}${FIREBASE_PATH}/${this.state.selectedYear}/meses/${this.state.selectedMonthIndex}/${oldType}/categorias/${this.state.editingCategory}/${this.state.editingId}.json`, { method: 'DELETE' });
+                        await fetch(`${FIREBASE_URL}${FIREBASE_PATH}/${curY}/meses/${curM}/${dataType}/categorias/${category}.json`, { method: 'POST', body: JSON.stringify({ descricao: desc, dia: dateStr, valor: value }) });
+                    } else {
+                        await fetch(`${FIREBASE_URL}${FIREBASE_PATH}/${curY}/meses/${curM}/${dataType}/categorias/${category}/${this.state.editingId}.json`, { method: 'PUT', body: JSON.stringify({ descricao: desc, dia: dateStr, valor: value }) });
+                    }
+                } else {
+                    if (type === 'pendente' && installments > 1) {
+                        for (let i = 1; i <= installments; i++) {
+                            const iDesc = `${desc} - ${i.toString().padStart(2, '0')}/${installments.toString().padStart(2, '0')}`;
+                            const iDate = `${d}/${(curM + 1).toString().padStart(2, '0')}/${curY}`;
+                            await fetch(`${FIREBASE_URL}${FIREBASE_PATH}/${curY}/meses/${curM}/${dataType}/categorias/${category}.json`, { method: 'POST', body: JSON.stringify({ descricao: iDesc, dia: iDate, valor: value }) });
+                            curM++; if (curM > 11) { curM = 0; curY++; }
+                        }
+                    } else {
+                        await fetch(`${FIREBASE_URL}${FIREBASE_PATH}/${curY}/meses/${curM}/${dataType}/categorias/${category}.json`, { method: 'POST', body: JSON.stringify({ descricao: desc, dia: dateStr, valor: value }) });
+                    }
+                }
+
+                this.showToast('Salvo!', 'success');
+                this.closeModal();
+                await this.loadYearData();
+                const view = type === 'receita' ? 'receitas' : type === 'gasto' ? 'gastos' : 'pendentes';
+                const detailView = document.getElementById(`${view}DetailView`);
+                if (detailView && !detailView.classList.contains('hidden')) {
+                    if (this.state.editingId && this.state.editingCategory !== category) this.showCategoryView(view);
+                    else this.renderDetailView(view, category);
+                }
+            },
+
+            openCategoryModal() {
+                const type = document.getElementById('transactionType').value;
+                document.getElementById('categoryModalTitle').textContent = `Nova Categoria (${type})`;
+                document.getElementById('categoryModal').classList.add('active');
+            },
+
+            closeCategoryModal() { document.getElementById('categoryModal').classList.remove('active'); },
+
+            async handleCategorySubmit(e) {
+                e.preventDefault();
+                const type = document.getElementById('transactionType').value;
+                const name = document.getElementById('newCategoryName').value.trim();
+                const exists = this.state.customCategories[type].find(c => c.trim().toLowerCase() === name.toLowerCase());
+                if (!exists) {
+                    this.state.customCategories[type].push(name);
+                    await this.saveAllCategories();
+                    this.updateCategoryOptions();
+                    document.getElementById('transactionCategory').value = name;
+                } else {
+                    document.getElementById('transactionCategory').value = exists;
+                }
+                this.closeCategoryModal();
+            },
+
+            calculateTotal(data) {
+                let t = 0;
+                if (data?.categorias) Object.values(data.categorias).forEach(c => Object.values(c).forEach(i => t += (i.valor || 0)));
+                return t;
+            },
+            formatCurrency(v) { return (v / 100).toLocaleString('pt-BR', { minimumFractionDigits: 2 }); },
+            parseDate(s) { const [d, m, y] = s.split('/'); return new Date(y, m - 1, d); },
+            formatDateForInput(s) { const [d, m, y] = s.split('/'); return `${y}-${m.padStart(2, '0')}-${d.padStart(2, '0')}`; },
+            formatDateFromInput(s) { const [y, m, d] = s.split('-'); return `${d}/${m}/${y}`; },
+            showToast(m, t) {
+                const toast = document.createElement('div'); toast.className = `toast ${t}`; toast.textContent = m;
+                document.body.appendChild(toast); setTimeout(() => toast.remove(), 3000);
+            },
+
+            setupEventListeners() {
+                document.getElementById('yearSelect').addEventListener('change', (e) => { this.state.selectedYear = e.target.value; this.loadYearData(); });
+                document.getElementById('monthSelect').addEventListener('change', (e) => { this.state.selectedMonthIndex = e.target.value; this.renderData(); });
+                document.querySelectorAll('.tab-button').forEach(btn => btn.addEventListener('click', () => {
+                    document.querySelectorAll('.tab-button, .tab-content').forEach(el => el.classList.remove('active'));
+                    btn.classList.add('active'); document.getElementById(btn.dataset.tab).classList.add('active');
+                }));
+                document.getElementById('fabButton').addEventListener('click', () => this.openModal());
+                document.getElementById('modalClose').addEventListener('click', () => this.closeModal());
+                document.getElementById('formCancel').addEventListener('click', () => this.closeModal());
+                document.getElementById('transactionForm').addEventListener('submit', (e) => this.handleFormSubmit(e));
+                document.getElementById('categoryForm').addEventListener('submit', (e) => this.handleCategorySubmit(e));
+                document.getElementById('transactionType').addEventListener('change', () => {
+                    this.updateCategoryOptions();
+                    const type = document.getElementById('transactionType').value;
+                    document.getElementById('installmentsGroup').classList.toggle('hidden', type !== 'pendente');
+                });
+            }
+        };
+
+        document.addEventListener('DOMContentLoaded', () => {
+            app.init();
+            
+            // Registro do Service Worker para PWA
+            if ('serviceWorker' in navigator) {
+                window.addEventListener('load', () => {
+                    navigator.serviceWorker.register('sw.js')
+                        .then(reg => console.log('Service Worker registrado!', reg))
+                        .catch(err => console.log('Erro ao registrar Service Worker:', err));
+                });
+            }
+        });
+    </script>
+</body>
+</html>
