@@ -563,6 +563,19 @@
                 
                 document.getElementById('yearSelect').value = this.state.selectedYear;
                 document.getElementById('monthSelect').value = this.state.selectedMonthIndex;
+
+                window.history.pushState({ page: "home" }, "");
+
+window.addEventListener("popstate", (event) => {
+    // Se estiver dentro de detalhe, volta pra lista
+    if (this.state.activeDetail) {
+        this.showCategoryView(this.state.activeDetail.type);
+        return;
+    }
+
+    // Se não, volta pra aba principal
+    this.switchTab("resumo");
+});
             },
 
             async loadCustomCategories() {
@@ -998,7 +1011,7 @@
 
             askConfirmPayAll(e, cat) { e.stopPropagation(); this.state.confirmTarget = { action: 'payAll', category: cat }; document.getElementById('confirmTitle').textContent = 'Pagar Tudo'; document.getElementById('confirmMessage').textContent = `Pagar todos os itens de "${cat}"?`; document.getElementById('confirmActionButton').onclick = () => { this.closeConfirmModal(); this.executeConfirmedAction(); }; document.getElementById('confirmModal').classList.add('active'); },
             handleCategoryClick(e, type, cat) { if (!e.target.classList.contains('btn-pay-all')) this.showDetailView(type, cat); },
-            showDetailView(type, cat) { this.state.activeDetail = { type, category: cat }; document.getElementById(`${type}View`).classList.add('hidden'); document.getElementById(`${type}DetailView`).classList.remove('hidden'); document.getElementById(`${type}DetailTitle`).textContent = cat; this.renderDetailView(type, cat); },
+            showDetailView(type, cat) { window.history.pushState({ page: "detail" }, ""); this.state.activeDetail = { type, category: cat }; document.getElementById(`${type}View`).classList.add('hidden'); document.getElementById(`${type}DetailView`).classList.remove('hidden'); document.getElementById(`${type}DetailTitle`).textContent = cat; this.renderDetailView(type, cat); },
             showCategoryView(type) { this.state.activeDetail = null; document.getElementById(`${type}View`).classList.remove('hidden'); document.getElementById(`${type}DetailView`).classList.add('hidden'); },
             closeModal() { document.getElementById('modal').classList.remove('active'); },
             openCategoryModal() { document.getElementById('categoryModal').classList.add('active'); },
