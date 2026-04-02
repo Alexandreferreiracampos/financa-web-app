@@ -747,18 +747,21 @@
                         <h3>Saldo</h3>
                         <div class="value">${this.formatCurrency(balance)}</div>
                     </div>
-                    <div class="summary-card income" onclick="app.switchTab('receitas')">
-                        <h3>Receitas</h3>
-                        <div class="value">+${this.formatCurrency(income)}</div>
-                    </div>
-                    <div class="summary-card gastos" onclick="app.switchTab('gastos')">
-                        <h3>Gastos</h3>
-                        <div class="value">-${this.formatCurrency(expense)}</div>
-                    </div>
                     <div class="summary-card expense" onclick="app.switchTab('pendentes')">
                         <h3>Pendentes</h3>
                         <div class="value">-${this.formatCurrency(pending)}</div>
                     </div>
+                    <div class="summary-card income" onclick="app.switchTab('receitas')">
+                        <h3>Receitas</h3>
+                        <div class="value">+${this.formatCurrency(income)}</div>
+                    </div>
+                    
+                    <div class="summary-card gastos" onclick="app.switchTab('gastos')">
+                        <h3>Gastos</h3>
+                        <div class="value">-${this.formatCurrency(expense)}</div>
+                    </div>
+                    
+                    
                 `;
             },
 
