@@ -110,6 +110,18 @@
             transition: border-color 0.2s;
         }
 
+        .modal-close{
+            background: var(--primary);
+            border: none;
+            font-size: 24px;
+            cursor: pointer;
+            padding: 2px 26px;
+            border-radius: 10px;
+            color: var(--bg-secondary);
+            transition: color 0.2s;
+            margin-bottom: 10px;
+        }
+
         .search-input:focus {
             border-color: var(--primary);
         }
@@ -235,9 +247,9 @@
         }
 
         .category-info { flex: 1; min-width: 0; margin-right: 8px; }
-        .category-name { font-size: 14px; font-weight: 600; margin-bottom: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .category-name { color: #333; font-size: 14px; font-weight: 600; margin-bottom: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
         .category-count { font-size: 11px; color: var(--text-secondary); }
-        .category-value { font-size: 14px; font-weight: 700; font-family: 'Courier New', monospace; text-align: right; }
+        .category-value { font-size: 17px; font-weight: bold; font-family: 'Courier New', monospace; text-align: right; }
 
         .transaction-item {
             background-color: var(--bg);
@@ -251,7 +263,7 @@
         .transaction-header { display: flex; justify-content: space-between; align-items: flex-start; }
         .transaction-description { font-size: 14px; font-weight: 500; word-break: break-word; }
         .transaction-date { font-size: 11px; color: var(--text-secondary); }
-        .transaction-value { font-size: 15px; font-weight: 700; font-family: 'Courier New', monospace; }
+        .transaction-value { font-size: 18px; font-weight: bold; font-family: 'Courier New', monospace; }
 
         .transaction-actions { display: flex; gap: 8px; margin-top: 12px; }
         .btn-sm { padding: 6px 10px; font-size: 10px; border-radius: 4px; font-weight: 700; text-transform: uppercase; border: none; cursor: pointer; flex: 1; }
@@ -313,7 +325,7 @@
 
         .hidden { display: none !important; }
         .income-text { color: var(--primary) !important; }
-        .expense-text { color: var(--danger) !important; }
+        .expense-text { color: var(--danger) !important; font-weight: bold; }
         .pending-text { color: var(--warning) !important; }
     </style>
 </head>
@@ -420,7 +432,7 @@
     <!-- Modal Lançamento -->
     <div class="modal" id="modal">
         <div class="modal-content">
-            <div class="modal-header">
+            <div class="modal-header" style=" display: flex; flex-direction: row; justify-content: space-between; align-items: center; ">
                 <h2 id="modalTitle">Novo Lançamento</h2>
                 <button class="modal-close" id="modalClose">&times;</button>
             </div>
