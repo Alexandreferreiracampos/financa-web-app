@@ -1114,7 +1114,7 @@
                 }
 
                 document.getElementById('categoryAnnualChartContainer').style.display = 'block';
-                document.getElementById('categoryAnnualChartTitle').innerText = `Gastos com "${categoryName}" no Ano`;
+                document.getElementById('categoryAnnualChartTitle').innerText = `Gastos com "${categoryName}" no Ano de ${this.state.selectedYear}`;
                 document.getElementById('categoryAnnualTotalValue').innerText = this.formatCurrency(totalAnnual * 100);
                 
                 // NOVO: Popula o seletor de categorias
