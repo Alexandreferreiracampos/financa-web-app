@@ -1342,6 +1342,16 @@
                 document.getElementById('monthSelect').onchange = (e) => { this.state.selectedMonthIndex = parseInt(e.target.value); this.renderData(); };
                 document.getElementById('searchInput').oninput = (e) => this.handleSearch(e.target.value, false);
 
+                // Máscara de Moeda (Real Brasileiro)
+                document.getElementById('transactionValue').oninput = (e) => {
+                    let value = e.target.value.replace(/\D/g, '');
+                    value = (value / 100).toLocaleString('pt-BR', {
+                        minimumFractionDigits: 2,
+                        maximumFractionDigits: 2
+                    });
+                    e.target.value = value;
+                };
+
                 document.querySelectorAll('.tab-button').forEach(btn => {
                     btn.onclick = () => {
                         document.querySelectorAll('.tab-button').forEach(b => b.classList.remove('active'));
@@ -1383,10 +1393,9 @@
 
                     const newPath = `${FIREBASE_URL}${FIREBASE_PATH}/${targetYear}/meses/${targetMonth}/${dataType}/categorias/${encodedCat}.json`;
                     let rawValue = document.getElementById('transactionValue').value;
-
+                    // Remove pontos de milhar e substitui vírgula decimal por ponto para o parseFloat
                     rawValue = rawValue.replace(/\./g, '').replace(',', '.');
-
-                    const value = Math.round(parseFloat(rawValue) * 100);
+                    const value = Math.round(parseFloat(rawValue || 0) * 100);
                     const installments = parseInt(document.getElementById('transactionInstallments').value) || 1;
                     const isRecurrent = document.getElementById('isRecurrent').checked;
                     const editFuture = document.getElementById('editFuture').checked;
@@ -1501,7 +1510,11 @@
                     document.getElementById('transactionCategory').value = category;
                     document.getElementById('transactionDescription').value = t.descricao;
                     document.getElementById('transactionDate').value = this.formatDateForInput(t.dia);
-                    document.getElementById('transactionValue').value = (t.valor / 100).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+                    // Formata o valor para o input ao editar (ex: 1234.56 -> "1.234,56")
+                    document.getElementById('transactionValue').value = (t.valor / 100).toLocaleString('pt-BR', { 
+                        minimumFractionDigits: 2, 
+                        maximumFractionDigits: 2 
+                    });
 
                     document.getElementById('recurrentGroup').classList.add('hidden');
 
