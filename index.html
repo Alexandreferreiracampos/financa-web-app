@@ -99,6 +99,7 @@
             background-color: var(--bg);
             cursor: pointer;
         }
+
         /* Annual Summary Cards */
         .annual-summary {
             margin: 20px;
@@ -948,6 +949,12 @@
                 `;
             },
 
+            getActiveTab() {
+                const active = document.querySelector('.tab-button.active');
+                console.log('Active tab:', active ? active.dataset.tab : 'resumo');
+                return active ? active.dataset.tab : 'resumo';
+            },
+
             renderCharts() {
                 const monthData = this.state.data.meses[this.state.selectedMonthIndex] || {};
                 const gastos = monthData.gastos?.categorias || {};
@@ -985,6 +992,8 @@
                         }
                     });
                 }
+
+
 
                 const monthlyLabels = MONTHS, monthlyIncome = [], monthlyExpense = [];
                 for (let i = 0; i < 12; i++) {
@@ -1070,6 +1079,7 @@
                 const monthData = this.state.data.meses[this.state.selectedMonthIndex] || {};
                 const dataType = type === 'receitas' ? 'depositos' : type === 'gastos' ? 'gastos' : 'pendentes';
                 const all = [];
+                console.log('Renderizando detalhes para:', { type, category, monthData: monthData[dataType] });
 
                 if (monthData[dataType]?.categorias) {
                     Object.entries(monthData[dataType].categorias).forEach(([catName, items]) => {
@@ -1102,7 +1112,7 @@
                 `).join('');
             },
 
-            
+
 
             async handleSearch(query, skipTabSwitch = false) {
                 if (!query) { if (!skipTabSwitch) this.renderData(); return; }
@@ -1125,7 +1135,7 @@
                     }
                 });
 
-                
+
 
                 const container = document.getElementById('resumoCategories');
                 if (!skipTabSwitch) this.switchTab('resumo');
@@ -1178,7 +1188,10 @@
                     };
                 });
 
-                document.getElementById('fabButton').onclick = () => this.openModal();
+                document.getElementById('fabButton').onclick = () => {
+                    const tab = this.getActiveTab();
+                    this.openModal(tab);
+                };
                 document.getElementById('modalClose').onclick = () => this.closeModal();
                 document.getElementById('formCancel').onclick = () => this.closeModal();
                 document.getElementById('transactionType').onchange = () => this.updateCategoryOptions();
@@ -1189,22 +1202,55 @@
                     const type = document.getElementById('transactionType').value;
                     const category = document.getElementById('transactionCategory').value.trim();
                     const description = document.getElementById('transactionDescription').value.trim();
+                    const dataType = type === 'receita' ? 'depositos' : type === 'gasto' ? 'gastos' : 'pendentes';
+                    const encodedCat = encodeURIComponent(category);
                     const date = document.getElementById('transactionDate').value;
+                    const [year, month] = date.split('-').map(Number);
+                    const targetMonth = month - 1; // JS começa em 0
+                    const targetYear = year;
+
+           
+                    const currentMonth = this.state.selectedMonthIndex;
+                    const currentYear = parseInt(this.state.selectedYear);
+
+            
+                    const oldPath = `${FIREBASE_URL}${FIREBASE_PATH}/${currentYear}/meses/${currentMonth}/${dataType}/categorias/${encodedCat}/${this.state.editingId}.json`;
+
+                    const newPath = `${FIREBASE_URL}${FIREBASE_PATH}/${targetYear}/meses/${targetMonth}/${dataType}/categorias/${encodedCat}.json`;
                     let rawValue = document.getElementById('transactionValue').value;
 
-rawValue = rawValue.replace(/\./g, '').replace(',', '.');
+                    rawValue = rawValue.replace(/\./g, '').replace(',', '.');
 
-const value = Math.round(parseFloat(rawValue) * 100);
+                    const value = Math.round(parseFloat(rawValue) * 100);
                     const installments = parseInt(document.getElementById('transactionInstallments').value) || 1;
                     const isRecurrent = document.getElementById('isRecurrent').checked;
                     const editFuture = document.getElementById('editFuture').checked;
 
                     const t = { descricao: description, dia: this.formatDateFromInput(date), valor: value };
-                    const dataType = type === 'receita' ? 'depositos' : type === 'gasto' ? 'gastos' : 'pendentes';
-                    const encodedCat = encodeURIComponent(category);
+                    
 
                     if (this.state.editingId) {
-                        await fetch(`${FIREBASE_URL}${FIREBASE_PATH}/${this.state.selectedYear}/meses/${this.state.selectedMonthIndex}/${dataType}/categorias/${encodedCat}/${this.state.editingId}.json`, { method: 'PUT', body: JSON.stringify(t) });
+                        // 🔥 SE MUDOU DE MÊS
+                       if (currentMonth !== targetMonth || currentYear !== targetYear) {
+
+                            // cria no novo mês
+                            await fetch(newPath, {
+                                method: 'POST',
+                                body: JSON.stringify(t)
+                            });
+
+                            // remove do antigo
+                            await fetch(oldPath, {
+                                method: 'DELETE'
+                            });
+
+                        } else {
+                            // mesmo mês → só atualiza
+                            await fetch(oldPath, {
+                                method: 'PUT',
+                                body: JSON.stringify(t)
+                            });
+                        };
                         if (editFuture && description.includes('(')) {
                             const baseDesc = description.split(' (')[0];
                             for (let i = 1; i <= 12; i++) {
@@ -1242,7 +1288,7 @@ const value = Math.round(parseFloat(rawValue) * 100);
                                 await fetch(`${FIREBASE_URL}${FIREBASE_PATH}/${y}/meses/${m}/pendentes/categorias/${encodedCat}.json`, { method: 'POST', body: JSON.stringify(instT) });
                             }
                         } else {
-                            await fetch(`${FIREBASE_URL}${FIREBASE_PATH}/${this.state.selectedYear}/meses/${this.state.selectedMonthIndex}/${dataType}/categorias/${encodedCat}.json`, { method: 'POST', body: JSON.stringify(t) });
+                            await fetch(`${FIREBASE_URL}${FIREBASE_PATH}/${targetYear}/meses/${targetMonth}/${dataType}/categorias/${encodedCat}.json`, { method: 'POST', body: JSON.stringify(t) });
                         }
                     }
                     this.showToast('Salvo!', 'success');
@@ -1270,25 +1316,58 @@ const value = Math.round(parseFloat(rawValue) * 100);
             },
 
             openModal(type = null, category = null, id = null) {
-                this.state.editingId = id; this.state.editingType = type; this.state.editingCategory = category;
+                this.state.editingId = id;
+                this.state.editingType = type;
+                this.state.editingCategory = category;
+
                 document.getElementById('editFutureGroup').classList.add('hidden');
                 document.getElementById('recurrentGroup').classList.remove('hidden');
+
                 if (id) {
                     const dataType = type === 'receitas' ? 'depositos' : type === 'gastos' ? 'gastos' : 'pendentes';
                     const t = this.state.data.meses[this.state.selectedMonthIndex][dataType].categorias[category][id];
-                    document.getElementById('transactionType').value = type === 'receitas' ? 'receita' : type === 'gastos' ? 'gasto' : 'pendente';
+
+                    document.getElementById('transactionType').value =
+                        type === 'receitas' ? 'receita' :
+                            type === 'gastos' ? 'gasto' : 'pendente';
+
                     this.updateCategoryOptions();
+
                     document.getElementById('transactionCategory').value = category;
                     document.getElementById('transactionDescription').value = t.descricao;
                     document.getElementById('transactionDate').value = this.formatDateForInput(t.dia);
-                    document.getElementById('transactionValue').value = (t.valor / 100).toFixed(2);
+                    document.getElementById('transactionValue').value = (t.valor / 100).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+
                     document.getElementById('recurrentGroup').classList.add('hidden');
-                    if (type === 'pendentes' && t.descricao.includes('(')) document.getElementById('editFutureGroup').classList.remove('hidden');
+
+                    if (type === 'pendentes' && t.descricao.includes('(')) {
+                        document.getElementById('editFutureGroup').classList.remove('hidden');
+                    }
+
                 } else {
+                    // 🔥 RESET PRIMEIRO
                     document.getElementById('transactionForm').reset();
                     document.getElementById('transactionDate').valueAsDate = new Date();
+
+                    // 🔥 DEPOIS DEFINE O TIPO
+                    const typeMap = {
+                        receitas: 'receita',
+                        gastos: 'gasto',
+                        pendentes: 'pendente'
+                    };
+
+                    if (typeMap[type]) {
+                        document.getElementById('transactionType').value = typeMap[type];
+                    }
+
                     this.updateCategoryOptions();
+
+                    // 🔥 EXTRA (opcional, mas MUITO bom)
+                    if (this.state.activeDetail) {
+                        document.getElementById('transactionCategory').value = this.state.activeDetail.category;
+                    }
                 }
+
                 document.getElementById('modal').classList.add('active');
             },
 
@@ -1382,20 +1461,20 @@ const value = Math.round(parseFloat(rawValue) * 100);
 
         const inputMoney = document.getElementById('transactionValue');
 
-inputMoney.addEventListener('input', (e) => {
-    let value = e.target.value.replace(/\D/g, '');
+        inputMoney.addEventListener('input', (e) => {
+            let value = e.target.value.replace(/\D/g, '');
 
-    if (value === '') {
-        e.target.value = '';
-        return;
-    }
+            if (value === '') {
+                e.target.value = '';
+                return;
+            }
 
-    value = (parseInt(value) / 100).toFixed(2);
-    value = value.replace('.', ',');
-    value = value.replace(/\B(?=(\d{3})+(?!\d))/g, '.');
+            value = (parseInt(value) / 100).toFixed(2);
+            value = value.replace('.', ',');
+            value = value.replace(/\B(?=(\d{3})+(?!\d))/g, '.');
 
-    e.target.value = value;
-});
+            e.target.value = value;
+        });
     </script>
 </body>
 
