@@ -365,36 +365,43 @@
 
         .category-value {
             font-size: 17px;
-            font-weight: bold;
+            font-weight: 700;
             font-family: 'Courier New', monospace;
+        }
+
+        .category-value-container {
             text-align: right;
+            display: flex;
+            flex-direction: column;
+            align-items: flex-end;
         }
 
         .transaction-item {
             background-color: var(--bg);
             border: 1px solid var(--border);
             border-radius: 10px;
-            padding: 12px;
+            padding: 14px;
             box-shadow: var(--shadow);
-            margin-bottom: 8px;
-            cursor: pointer;
-            transition: transform 0.1s;
-        }
-
-        .transaction-item:active {
-            transform: scale(0.98);
         }
 
         .transaction-header {
             display: flex;
             justify-content: space-between;
             align-items: flex-start;
+            margin-bottom: 12px;
+        }
+
+        .transaction-info {
+            flex: 1;
+            min-width: 0;
+            margin-right: 8px;
         }
 
         .transaction-description {
             font-size: 14px;
-            font-weight: 500;
-            word-break: break-word;
+            font-weight: 600;
+            margin-bottom: 2px;
+            color: var(--text);
         }
 
         .transaction-date {
@@ -403,41 +410,43 @@
         }
 
         .transaction-value {
-            font-size: 18px;
-            font-weight: bold;
+            font-size: 16px;
+            font-weight: 700;
             font-family: 'Courier New', monospace;
+            white-space: nowrap;
         }
 
         .transaction-actions {
             display: flex;
             gap: 8px;
-            margin-top: 12px;
+            justify-content: flex-end;
+            border-top: 1px solid var(--border);
+            padding-top: 12px;
         }
 
         .btn-sm {
-            padding: 6px 10px;
-            font-size: 10px;
-            border-radius: 4px;
-            font-weight: 700;
-            text-transform: uppercase;
+            padding: 6px 12px;
+            border-radius: 6px;
+            font-size: 12px;
+            font-weight: 600;
             border: none;
             cursor: pointer;
-            flex: 1;
+            transition: 0.2s;
         }
 
         .btn-pay {
-            background-color: var(--warning);
-            color: white;
+            background-color: #dcfce7;
+            color: #166534;
         }
 
         .btn-edit {
-            background-color: var(--bg-secondary);
-            color: var(--text);
+            background-color: #fef3c7;
+            color: #92400e;
         }
 
         .btn-delete {
-            background-color: var(--danger);
-            color: white;
+            background-color: #fee2e2;
+            color: #991b1b;
         }
 
         /* Modal */
@@ -463,11 +472,11 @@
         }
 
         .modal-content {
-            background: white;
+            background: var(--bg);
             width: 100%;
             max-width: 500px;
-            border-radius: 20px 20px 0 0;
             padding: 24px;
+            border-radius: 20px 20px 0 0;
             transform: translateY(100%);
             transition: 0.3s;
             max-height: 90vh;
@@ -484,10 +493,11 @@
 
         .form-group label {
             display: block;
-            font-size: 13px;
+            font-size: 12px;
             font-weight: 600;
-            margin-bottom: 6px;
             color: var(--text-secondary);
+            margin-bottom: 6px;
+            text-transform: uppercase;
         }
 
         .form-group input,
@@ -495,8 +505,10 @@
             width: 100%;
             padding: 12px;
             border: 1px solid var(--border);
-            border-radius: 8px;
-            font-size: 15px;
+            border-radius: 10px;
+            font-family: 'Inter', sans-serif;
+            font-size: 14px;
+            outline: none;
         }
 
         .btn-main {
@@ -692,6 +704,24 @@
                     <canvas id="annualChart"></canvas>
                 </div>
             </div>
+
+            <!-- NOVO: Gráfico de Categoria Anual -->
+            <div class="chart-container" id="categoryAnnualChartContainer" style="display: none;">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; gap: 12px;">
+                    <div class="chart-title" id="categoryAnnualChartTitle" style="margin: 0; flex: 1;">Gastos por Categoria no Ano</div>
+                    <select id="categoryAnnualSelector" style="padding: 8px 12px; border-radius: 6px; border: 1px solid var(--border); font-size: 13px; cursor: pointer;" onchange="app.onCategoryAnnualChange()"></select>
+                </div>
+                <div style="background-color: var(--bg-secondary); border-radius: 10px; padding: 16px; margin-bottom: 16px; text-align: center;">
+                    <div style="font-size: 12px; text-transform: uppercase; color: var(--text-secondary); margin-bottom: 8px; font-weight: 600;">Total no Ano</div>
+                    <div id="categoryAnnualTotalValue" style="font-size: 28px; font-weight: 700; color: var(--danger); font-family: 'Courier New', monospace;">R$ 0,00</div>
+                </div>
+                <div class="chart-wrapper" style="height: 300px;">
+                    <canvas id="categoryAnnualChart"></canvas>
+                </div>
+                <div style="text-align: center; margin-top: 10px;">
+                    <button class="btn-sm btn-cancel" onclick="app.hideCategoryAnnualChart()">Fechar Detalhes</button>
+                </div>
+            </div>
         </div>
 
         <!-- Tab Receitas -->
@@ -796,7 +826,7 @@
 
     <!-- Modal Categoria -->
     <div class="modal" id="categoryModal">
-        <div class="modal-content" style="margin: auto; border-radius: 15px;">
+        <div class="modal-content" style="border-radius: 15px; margin: auto; max-width: 400px;">
             <h2>Nova Categoria</h2>
             <form id="categoryForm" style="margin-top: 15px;">
                 <div class="form-group">
@@ -830,7 +860,7 @@
                 editingId: null, editingType: null, editingCategory: null,
                 activeDetail: null, allYears: [], confirmTarget: null,
                 customCategories: { receita: [], gasto: [], pendente: [] },
-                charts: { category: null, monthly: null, annual: null }
+                charts: { category: null, monthly: null, annual: null, categoryAnnual: null }
             },
 
             async init() {
@@ -993,8 +1023,6 @@
                     });
                 }
 
-
-
                 const monthlyLabels = MONTHS, monthlyIncome = [], monthlyExpense = [];
                 for (let i = 0; i < 12; i++) {
                     const m = this.state.data.meses[i] || {};
@@ -1031,10 +1059,101 @@
                             scales: { y: { beginAtZero: true } },
                             plugins: { legend: { display: true, position: 'top' } },
                             maintainAspectRatio: false,
-                            responsive: true
+                            responsive: true,
+                            onClick: (evt, activeElements, chart) => {
+                                if (activeElements.length > 0) {
+                                    // NOVO: Ao clicar na barra do mês, vai para aquele mês
+                                    const index = activeElements[0].index;
+                                    this.state.selectedMonthIndex = index;
+                                    document.getElementById('monthSelect').value = index;
+                                    this.renderData();
+                                    this.switchTab('resumo');
+                                }
+                            }
                         }
                     });
                 }
+            },
+
+            // NOVO: Renderiza gráfico detalhado de uma categoria ao longo do ano
+            renderCategoryAnnualChart(categoryName) {
+                if (!this.state.data || !this.state.data.meses) return;
+
+                const values = [];
+                let totalAnnual = 0;
+                for (let i = 0; i < 12; i++) {
+                    const m = this.state.data.meses[i] || {};
+                    let monthTotal = 0;
+                    if (m.gastos && m.gastos.categorias) {
+                        Object.entries(m.gastos.categorias).forEach(([cat, items]) => {
+                            if (cat.trim().toLowerCase() === categoryName.trim().toLowerCase()) {
+                                Object.values(items).forEach(t => monthTotal += t.valor || 0);
+                            }
+                        });
+                    }
+                    monthTotal = monthTotal / 100;
+                    values.push(monthTotal);
+                    totalAnnual += monthTotal;
+                }
+
+                document.getElementById('categoryAnnualChartContainer').style.display = 'block';
+                document.getElementById('categoryAnnualChartTitle').innerText = `Gastos com "${categoryName}" no Ano`;
+                document.getElementById('categoryAnnualTotalValue').innerText = this.formatCurrency(totalAnnual * 100);
+                
+                // NOVO: Popula o seletor de categorias
+                this.populateCategoryAnnualSelector(categoryName);
+
+                if (this.state.charts.categoryAnnual) this.state.charts.categoryAnnual.destroy();
+                const ctx = document.getElementById('categoryAnnualChart');
+                this.state.charts.categoryAnnual = new Chart(ctx, {
+                    type: 'line',
+                    data: {
+                        labels: MONTHS.map(m => m.substring(0, 3)),
+                        datasets: [{
+                            label: categoryName,
+                            data: values,
+                            borderColor: '#ef4444',
+                            backgroundColor: 'rgba(239, 68, 68, 0.1)',
+                            fill: true,
+                            tension: 0.3,
+                            pointRadius: 5,
+                            pointHoverRadius: 8
+                        }]
+                    },
+                    options: {
+                        scales: { y: { beginAtZero: true } },
+                        maintainAspectRatio: false,
+                        responsive: true
+                    }
+                });
+                
+                // Scroll para o gráfico
+                document.getElementById('categoryAnnualChartContainer').scrollIntoView({ behavior: 'smooth' });
+            },
+
+            hideCategoryAnnualChart() {
+                document.getElementById('categoryAnnualChartContainer').style.display = 'none';
+            },
+
+            populateCategoryAnnualSelector(selectedCategory) {
+                const categories = new Set();
+                if (this.state.data && this.state.data.meses) {
+                    for (let i = 0; i < 12; i++) {
+                        const m = this.state.data.meses[i] || {};
+                        if (m.gastos && m.gastos.categorias) {
+                            Object.keys(m.gastos.categorias).forEach(cat => categories.add(cat.trim()));
+                        }
+                    }
+                }
+                const sortedCategories = Array.from(categories).sort();
+                const selector = document.getElementById('categoryAnnualSelector');
+                selector.innerHTML = sortedCategories.map(cat => `<option value="${cat}">${cat}</option>`).join('');
+                selector.value = selectedCategory;
+            },
+
+            onCategoryAnnualChange() {
+                const selectedCategory = document.getElementById('categoryAnnualSelector').value;
+                if (selectedCategory) this.renderCategoryAnnualChart(selectedCategory);
             },
 
             renderCategoryView(type, categoryData) {
@@ -1068,7 +1187,10 @@
                         </div>
                         <div class="category-value-container">
                             <div class="category-value ${color}">${this.formatCurrency(cat.total)}</div>
-                            ${type === 'pendentes' ? `<button class="btn-pay-all" onclick="app.askConfirmPayAll(event, '${cat.name}')" style="background: var(--warning); color: white; border: none; padding: 4px 8px; border-radius: 4px; font-size: 10px; font-weight: 700; margin-top: 4px;">Pagar Tudo</button>` : ''}
+                            <div style="display: flex; gap: 5px; margin-top: 5px;">
+                                ${type === 'gastos' ? `<button class="btn-sm" onclick="event.stopPropagation(); app.switchTab('resumoAnual'); app.renderCategoryAnnualChart('${cat.name}')" style="background: var(--info); color: white; padding: 4px 8px; font-size: 10px;">Ver Ano</button>` : ''}
+                                ${type === 'pendentes' ? `<button class="btn-pay-all" onclick="app.askConfirmPayAll(event, '${cat.name}')" style="background: var(--warning); color: white; border: none; padding: 4px 8px; border-radius: 4px; font-size: 10px; font-weight: 700;">Pagar Tudo</button>` : ''}
+                            </div>
                         </div>
                     </div>
                 `).join('');
@@ -1112,8 +1234,6 @@
                 `).join('');
             },
 
-
-
             async handleSearch(query, skipTabSwitch = false) {
                 if (!query) { if (!skipTabSwitch) this.renderData(); return; }
                 const results = [];
@@ -1134,8 +1254,6 @@
                         });
                     }
                 });
-
-
 
                 const container = document.getElementById('resumoCategories');
                 if (!skipTabSwitch) this.switchTab('resumo');
@@ -1174,7 +1292,15 @@
             },
 
             setupEventListeners() {
-                document.getElementById('yearSelect').onchange = (e) => { this.state.selectedYear = e.target.value; this.loadYearData(); };
+                document.getElementById('yearSelect').onchange = (e) => { 
+                    this.state.selectedYear = e.target.value; 
+                    this.loadYearData();
+                    // NOVO: Se estiver vendo o gráfico de categoria, atualiza automaticamente
+                    if (document.getElementById('categoryAnnualChartContainer').style.display !== 'none') {
+                        const selectedCategory = document.getElementById('categoryAnnualSelector').value;
+                        if (selectedCategory) this.renderCategoryAnnualChart(selectedCategory);
+                    }
+                };
                 document.getElementById('monthSelect').onchange = (e) => { this.state.selectedMonthIndex = parseInt(e.target.value); this.renderData(); };
                 document.getElementById('searchInput').oninput = (e) => this.handleSearch(e.target.value, false);
 
@@ -1194,6 +1320,7 @@
                 };
                 document.getElementById('modalClose').onclick = () => this.closeModal();
                 document.getElementById('formCancel').onclick = () => this.closeModal();
+
                 document.getElementById('transactionType').onchange = () => this.updateCategoryOptions();
 
                 document.getElementById('transactionForm').onsubmit = async (e) => {
@@ -1405,76 +1532,125 @@
                 this.hideLoading();
             },
 
-            async confirmDelete(type, category, id) {
+            async deleteTransaction(type, category, id) {
                 this.showLoading('Excluindo...');
                 const dataType = type === 'receitas' ? 'depositos' : type === 'gastos' ? 'gastos' : 'pendentes';
-                await fetch(`${FIREBASE_URL}${FIREBASE_PATH}/${this.state.selectedYear}/meses/${this.state.selectedMonthIndex}/${dataType}/categorias/${encodeURIComponent(category)}/${id}.json`, { method: 'DELETE' });
+                const encodedCat = encodeURIComponent(category);
+                await fetch(`${FIREBASE_URL}${FIREBASE_PATH}/${this.state.selectedYear}/meses/${this.state.selectedMonthIndex}/${dataType}/categorias/${encodedCat}/${id}.json`, { method: 'DELETE' });
                 await this.loadYearData();
                 this.hideLoading();
             },
 
-            askConfirm(action, type, category, id, desc) {
+            handleCategoryClick(event, type, category) {
+                if (event.target.tagName === 'BUTTON') return;
+                this.showDetailView(type, category);
+            },
+
+            showDetailView(type, category) {
+                this.state.activeDetail = { type, category };
+                document.getElementById(`${type}View`).classList.add('hidden');
+                document.getElementById(`${type}DetailView`).classList.remove('hidden');
+                document.getElementById(`${type}DetailTitle`).innerText = category;
+                this.renderDetailView(type, category);
+                window.history.pushState({ tab: type, category }, "");
+            },
+
+            showCategoryView(type) {
+                this.state.activeDetail = null;
+                document.getElementById(`${type}View`).classList.remove('hidden');
+                document.getElementById(`${type}DetailView`).classList.add('hidden');
+            },
+
+            switchTab(tabId, pushState = true) {
+                document.querySelectorAll('.tab-button').forEach(b => {
+                    b.classList.toggle('active', b.dataset.tab === tabId);
+                });
+                document.querySelectorAll('.tab-content').forEach(c => {
+                    c.classList.toggle('hidden', c.id !== tabId);
+                });
+                if (pushState) window.history.pushState({ tab: tabId }, "");
+                this.renderCharts();
+            },
+
+            openCategoryModal() { document.getElementById('categoryModal').classList.add('active'); },
+            closeCategoryModal() { document.getElementById('categoryModal').classList.remove('active'); },
+
+            askConfirm(action, type, category, id, description) {
+                const messages = {
+                    delete: `Deseja realmente excluir "${description}"?`,
+                    pay: `Deseja marcar "${description}" como pago?`
+                };
                 this.state.confirmTarget = { action, type, category, id };
-                document.getElementById('confirmTitle').textContent = action === 'pay' ? 'Pagar' : 'Excluir';
-                document.getElementById('confirmMessage').textContent = `Deseja ${action === 'pay' ? 'pagar' : 'excluir'} "${desc}"?`;
-                document.getElementById('confirmActionButton').onclick = () => { this.closeConfirmModal(); this.executeConfirmedAction(); };
+                document.getElementById('confirmTitle').innerText = action === 'delete' ? 'Excluir' : 'Marcar como Pago';
+                document.getElementById('confirmMessage').innerText = messages[action];
                 document.getElementById('confirmModal').classList.add('active');
             },
 
-            executeConfirmedAction() {
-                const { action, type, category, id } = this.state.confirmTarget;
-                if (action === 'pay') this.markAsPaid(type, category, id);
-                else if (action === 'payAll') this.markCategoryAsPaid(category);
-                else this.confirmDelete(type, category, id);
+            askConfirmPayAll(event, category) {
+                event.stopPropagation();
+                this.state.confirmTarget = { action: 'payAll', category };
+                document.getElementById('confirmTitle').innerText = 'Pagar Tudo';
+                document.getElementById('confirmMessage').innerText = `Deseja marcar todos os itens de "${category}" como pagos?`;
+                document.getElementById('confirmModal').classList.add('active');
             },
 
-            askConfirmPayAll(e, cat) { e.stopPropagation(); this.state.confirmTarget = { action: 'payAll', category: cat }; document.getElementById('confirmTitle').textContent = 'Pagar Tudo'; document.getElementById('confirmMessage').textContent = `Pagar todos os itens de "${cat}"?`; document.getElementById('confirmActionButton').onclick = () => { this.closeConfirmModal(); this.executeConfirmedAction(); }; document.getElementById('confirmModal').classList.add('active'); },
-            handleCategoryClick(e, type, cat) { if (!e.target.classList.contains('btn-pay-all')) this.showDetailView(type, cat); },
-            showDetailView(type, cat) { window.history.pushState({ page: "detail" }, ""); this.state.activeDetail = { type, category: cat }; document.getElementById(`${type}View`).classList.add('hidden'); document.getElementById(`${type}DetailView`).classList.remove('hidden'); document.getElementById(`${type}DetailTitle`).textContent = cat; this.renderDetailView(type, cat); },
-            showCategoryView(type) { this.state.activeDetail = null; document.getElementById(`${type}View`).classList.remove('hidden'); document.getElementById(`${type}DetailView`).classList.add('hidden'); },
-            closeModal() { document.getElementById('modal').classList.remove('active'); },
-            openCategoryModal() { document.getElementById('categoryModal').classList.add('active'); },
-            closeCategoryModal() { document.getElementById('categoryModal').classList.remove('active'); },
+            async confirmAction() {
+                const { action, type, category, id } = this.state.confirmTarget;
+                if (action === 'delete') await this.deleteTransaction(type, category, id);
+                if (action === 'pay') await this.markAsPaid(type, category, id);
+                if (action === 'payAll') await this.markCategoryAsPaid(category);
+                this.closeConfirmModal();
+            },
+
             closeConfirmModal() { document.getElementById('confirmModal').classList.remove('active'); },
-            showLoading(t) { document.getElementById('loadingText').textContent = t; document.getElementById('loadingOverlay').classList.add('active'); },
+            closeModal() { document.getElementById('modal').classList.remove('active'); },
+
+            calculateTotal(data) {
+                if (!data || !data.categorias) return 0;
+                let total = 0;
+                Object.values(data.categorias).forEach(cat => {
+                    Object.values(cat).forEach(t => total += t.valor || 0);
+                });
+                return total;
+            },
+
+            formatCurrency(value) {
+                return (value / 100).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+            },
+
+            formatDateForInput(dia) {
+                const [d, m, y] = dia.split('/');
+                return `${y}-${m.padStart(2, '0')}-${d.padStart(2, '0')}`;
+            },
+
+            formatDateFromInput(date) {
+                const [y, m, d] = date.split('-');
+                return `${d}/${parseInt(m)}/${y}`;
+            },
+
+            parseDate(dia) {
+                const [d, m, y] = dia.split('/');
+                return new Date(y, m - 1, d);
+            },
+
+            showLoading(text) {
+                document.getElementById('loadingText').innerText = text;
+                document.getElementById('loadingOverlay').classList.add('active');
+            },
+
             hideLoading() { document.getElementById('loadingOverlay').classList.remove('active'); },
-            showToast(m, t) { const toast = document.getElementById('toast'); toast.textContent = m; toast.style.background = t === 'success' ? '#10b981' : '#ef4444'; toast.classList.add('show'); setTimeout(() => toast.classList.remove('show'), 3000); },
-            formatCurrency(v) { return (v / 100).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }); },
-            formatDateFromInput(d) { const [y, m, day] = d.split('-'); return `${day}/${m}/${y}`; },
-            formatDateForInput(d) { if (!d) return ''; const [day, m, y] = d.split('/'); return `${y}-${m}-${day}`; },
-            parseDate(d) { const [day, m, y] = d.split('/'); return new Date(y, m - 1, day); },
-            calculateTotal(data) { if (!data || !data.categorias) return 0; let total = 0; Object.values(data.categorias).forEach(cat => Object.values(cat).forEach(t => total += t.valor || 0)); return total; },
-            switchTab(tabId, addToHistory = true) {
-                const btn = document.querySelector(`.tab-button[data-tab="${tabId}"]`);
 
-                if (btn) {
-                    btn.click();
-
-                    if (addToHistory) {
-                        window.history.pushState({ page: "tab", tab: tabId }, "");
-                    }
-                }
+            showToast(message, type = 'success') {
+                const toast = document.getElementById('toast');
+                toast.innerText = message;
+                toast.style.background = type === 'success' ? 'var(--primary)' : 'var(--danger)';
+                toast.classList.add('show');
+                setTimeout(() => toast.classList.remove('show'), 3000);
             }
         };
 
+        document.getElementById('confirmActionButton').onclick = () => app.confirmAction();
         app.init();
-
-        const inputMoney = document.getElementById('transactionValue');
-
-        inputMoney.addEventListener('input', (e) => {
-            let value = e.target.value.replace(/\D/g, '');
-
-            if (value === '') {
-                e.target.value = '';
-                return;
-            }
-
-            value = (parseInt(value) / 100).toFixed(2);
-            value = value.replace('.', ',');
-            value = value.replace(/\B(?=(\d{3})+(?!\d))/g, '.');
-
-            e.target.value = value;
-        });
     </script>
 </body>
 
