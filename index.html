@@ -706,7 +706,7 @@
             </div>
 
             <!-- NOVO: Gráfico de Categoria Anual -->
-            <div class="chart-container" id="categoryAnnualChartContainer" style="display: none;">
+            <div class="chart-container" id="categoryAnnualChartContainer">
                 <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; gap: 12px;">
                     <div class="chart-title" id="categoryAnnualChartTitle" style="margin: 0; flex: 1;">Gastos por Categoria no Ano</div>
                     <select id="categoryAnnualSelector" style="padding: 8px 12px; border-radius: 6px; border: 1px solid var(--border); font-size: 13px; cursor: pointer;" onchange="app.onCategoryAnnualChange()"></select>
@@ -717,9 +717,6 @@
                 </div>
                 <div class="chart-wrapper" style="height: 300px;">
                     <canvas id="categoryAnnualChart"></canvas>
-                </div>
-                <div style="text-align: center; margin-top: 10px;">
-                    <button class="btn-sm btn-cancel" onclick="app.hideCategoryAnnualChart()">Fechar Detalhes</button>
                 </div>
             </div>
         </div>
@@ -932,6 +929,26 @@
                 this.renderCategoryView('pendentes', monthData.pendentes);
                 this.renderCharts();
                 this.renderAnnualSummary();
+                
+                // Renderiza o gráfico de categoria anual automaticamente
+                const currentCategory = document.getElementById('categoryAnnualSelector')?.value;
+                if (currentCategory) {
+                    this.renderCategoryAnnualChart(currentCategory, false);
+                } else {
+                    // Se não houver categoria selecionada, tenta pegar a primeira disponível
+                    const categories = new Set();
+                    if (this.state.data && this.state.data.meses) {
+                        for (let i = 0; i < 12; i++) {
+                            const m = this.state.data.meses[i] || {};
+                            if (m.gastos && m.gastos.categorias) {
+                                Object.keys(m.gastos.categorias).forEach(cat => categories.add(cat.trim()));
+                            }
+                        }
+                    }
+                    const firstCat = Array.from(categories).sort()[0];
+                    if (firstCat) this.renderCategoryAnnualChart(firstCat, false);
+                }
+
                 if (this.state.activeDetail) this.renderDetailView(this.state.activeDetail.type, this.state.activeDetail.category);
 
                 const searchQuery = document.getElementById('searchInput').value;
@@ -1076,7 +1093,7 @@
             },
 
             // NOVO: Renderiza gráfico detalhado de uma categoria ao longo do ano
-            renderCategoryAnnualChart(categoryName) {
+            renderCategoryAnnualChart(categoryName, shouldScroll = true) {
                 if (!this.state.data || !this.state.data.meses) return;
 
                 const values = [];
@@ -1123,12 +1140,27 @@
                     options: {
                         scales: { y: { beginAtZero: true } },
                         maintainAspectRatio: false,
-                        responsive: true
+                        responsive: true,
+                        onClick: (evt, activeElements, chart) => {
+                            if (activeElements.length > 0) {
+                                const index = activeElements[0].index;
+                                // Atualiza o mês selecionado no estado e no seletor
+                                this.state.selectedMonthIndex = index;
+                                document.getElementById('monthSelect').value = index;
+                                
+                                // Renderiza os dados do novo mês selecionado
+                                this.renderData();
+                                
+                                // Muda para a aba de gastos e mostra o detalhe da categoria
+                                this.switchTab('gastos');
+                                this.showDetailView('gastos', categoryName);
+                            }
+                        }
                     }
                 });
                 
-                // Scroll para o gráfico
-                document.getElementById('categoryAnnualChartContainer').scrollIntoView({ behavior: 'smooth' });
+                // Scroll para o gráfico apenas se solicitado
+                if (shouldScroll) document.getElementById('categoryAnnualChartContainer').scrollIntoView({ behavior: 'smooth' });
             },
 
             hideCategoryAnnualChart() {
@@ -1292,13 +1324,19 @@
             },
 
             setupEventListeners() {
-                document.getElementById('yearSelect').onchange = (e) => { 
+                document.getElementById('yearSelect').onchange = async (e) => { 
                     this.state.selectedYear = e.target.value; 
-                    this.loadYearData();
+                    await this.loadYearData();
                     // NOVO: Se estiver vendo o gráfico de categoria, atualiza automaticamente
                     if (document.getElementById('categoryAnnualChartContainer').style.display !== 'none') {
                         const selectedCategory = document.getElementById('categoryAnnualSelector').value;
-                        if (selectedCategory) this.renderCategoryAnnualChart(selectedCategory);
+                        if (selectedCategory) {
+                            // Primeiro renova a lista de categorias para o novo ano
+                            this.populateCategoryAnnualSelector(selectedCategory);
+                            // Depois renderiza o gráfico com a categoria (se ela existir no novo ano)
+                            const newSelectedCategory = document.getElementById('categoryAnnualSelector').value;
+                            this.renderCategoryAnnualChart(newSelectedCategory);
+                        }
                     }
                 };
                 document.getElementById('monthSelect').onchange = (e) => { this.state.selectedMonthIndex = parseInt(e.target.value); this.renderData(); };
