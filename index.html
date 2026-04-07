@@ -707,18 +707,29 @@
 
             <!-- NOVO: Gráfico de Categoria Anual -->
             <div class="chart-container" id="categoryAnnualChartContainer">
-                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; gap: 12px;">
-                    <div class="chart-title" id="categoryAnnualChartTitle" style="margin: 0; flex: 1;">Gastos por Categoria no Ano</div>
-                    <select id="categoryAnnualSelector" style="padding: 8px 12px; border-radius: 6px; border: 1px solid var(--border); font-size: 13px; cursor: pointer;" onchange="app.onCategoryAnnualChange()"></select>
+                <div
+                    style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; gap: 12px;">
+                    <div class="chart-title" id="categoryAnnualChartTitle" style="margin: 0; flex: 1;">Gastos por
+                        Categoria no Ano</div>
+                    <select id="categoryAnnualSelector"
+                        style="padding: 8px 12px; border-radius: 6px; border: 1px solid var(--border); font-size: 13px; cursor: pointer;"
+                        onchange="app.onCategoryAnnualChange()"></select>
                 </div>
-                <div style="background-color: var(--bg-secondary); border-radius: 10px; padding: 16px; margin-bottom: 16px; text-align: center;">
-                    <div id="categoryAnnualChartTitleGrafico" style="font-size: 12px; text-transform: uppercase; color: var(--text-secondary); margin-bottom: 8px; font-weight: 600;">Total no Ano</div>
-                    <div id="categoryAnnualTotalValue" style="font-size: 28px; font-weight: 700; color: var(--danger); font-family: 'Courier New', monospace;">R$ 0,00</div>
+                <div
+                    style="background-color: var(--bg-secondary); border-radius: 10px; padding: 16px; margin-bottom: 16px; text-align: center;">
+                    <div id="categoryAnnualChartTitleGrafico"
+                        style="font-size: 12px; text-transform: uppercase; color: var(--text-secondary); margin-bottom: 8px; font-weight: 600;">
+                        Total no Ano</div>
+                    <div id="categoryAnnualTotalValue"
+                        style="font-size: 28px; font-weight: 700; color: var(--danger); font-family: 'Courier New', monospace;">
+                        R$ 0,00</div>
                 </div>
                 <div class="chart-wrapper" style="height: 300px;">
                     <canvas id="categoryAnnualChart"></canvas>
                 </div>
             </div>
+
+            <div id="resumoGastoAnual" class="transactions"></div>
         </div>
 
         <!-- Tab Receitas -->
@@ -857,7 +868,8 @@
                 editingId: null, editingType: null, editingCategory: null,
                 activeDetail: null, allYears: [], confirmTarget: null,
                 customCategories: { receita: [], gasto: [], pendente: [] },
-                charts: { category: null, monthly: null, annual: null, categoryAnnual: null }
+                charts: { category: null, monthly: null, annual: null, categoryAnnual: null },
+                sortOrder: 'desc',
             },
 
             async init() {
@@ -929,7 +941,7 @@
                 this.renderCategoryView('pendentes', monthData.pendentes);
                 this.renderCharts();
                 this.renderAnnualSummary();
-                
+
                 // Renderiza o gráfico de categoria anual automaticamente
                 const currentCategory = document.getElementById('categoryAnnualSelector')?.value;
                 if (currentCategory) {
@@ -953,6 +965,10 @@
 
                 const searchQuery = document.getElementById('searchInput').value;
                 if (searchQuery) this.handleSearch(searchQuery, true);
+
+                if (currentCategory) {
+                    this.renderMonthTransactions(currentCategory);
+                }
             },
 
             renderSummary(monthData) {
@@ -1117,7 +1133,7 @@
                 document.getElementById('categoryAnnualChartTitle').innerText = `Gastos com "${categoryName}"`;
                 document.getElementById('categoryAnnualChartTitleGrafico').innerText = `Total no Ano de ${this.state.selectedYear}`;
                 document.getElementById('categoryAnnualTotalValue').innerText = this.formatCurrency(totalAnnual * 100);
-                
+
                 // NOVO: Popula o seletor de categorias
                 this.populateCategoryAnnualSelector(categoryName);
 
@@ -1148,18 +1164,19 @@
                                 // Atualiza o mês selecionado no estado e no seletor
                                 this.state.selectedMonthIndex = index;
                                 document.getElementById('monthSelect').value = index;
-                                
+                                this.renderMonthTransactions(categoryName);
+
                                 // Renderiza os dados do novo mês selecionado
-                                this.renderData();
-                                
+                                //this.renderData();
+
                                 // Muda para a aba de gastos e mostra o detalhe da categoria
-                                this.switchTab('gastos');
-                                this.showDetailView('gastos', categoryName);
+                                //this.switchTab('gastos');
+                                //this.showDetailView('gastos', categoryName);
                             }
                         }
                     }
                 });
-                
+
                 // Scroll para o gráfico apenas se solicitado
                 if (shouldScroll) document.getElementById('categoryAnnualChartContainer').scrollIntoView({ behavior: 'smooth' });
             },
@@ -1187,6 +1204,7 @@
             onCategoryAnnualChange() {
                 const selectedCategory = document.getElementById('categoryAnnualSelector').value;
                 if (selectedCategory) this.renderCategoryAnnualChart(selectedCategory);
+                this.renderMonthTransactions(selectedCategory);
             },
 
             renderCategoryView(type, categoryData) {
@@ -1325,8 +1343,8 @@
             },
 
             setupEventListeners() {
-                document.getElementById('yearSelect').onchange = async (e) => { 
-                    this.state.selectedYear = e.target.value; 
+                document.getElementById('yearSelect').onchange = async (e) => {
+                    this.state.selectedYear = e.target.value;
                     await this.loadYearData();
                     // NOVO: Se estiver vendo o gráfico de categoria, atualiza automaticamente
                     if (document.getElementById('categoryAnnualChartContainer').style.display !== 'none') {
@@ -1385,11 +1403,11 @@
                     const targetMonth = month - 1; // JS começa em 0
                     const targetYear = year;
 
-           
+
                     const currentMonth = this.state.selectedMonthIndex;
                     const currentYear = parseInt(this.state.selectedYear);
 
-            
+
                     const oldPath = `${FIREBASE_URL}${FIREBASE_PATH}/${currentYear}/meses/${currentMonth}/${dataType}/categorias/${encodedCat}/${this.state.editingId}.json`;
 
                     const newPath = `${FIREBASE_URL}${FIREBASE_PATH}/${targetYear}/meses/${targetMonth}/${dataType}/categorias/${encodedCat}.json`;
@@ -1402,11 +1420,11 @@
                     const editFuture = document.getElementById('editFuture').checked;
 
                     const t = { descricao: description, dia: this.formatDateFromInput(date), valor: value };
-                    
+
 
                     if (this.state.editingId) {
                         // 🔥 SE MUDOU DE MÊS
-                       if (currentMonth !== targetMonth || currentYear !== targetYear) {
+                        if (currentMonth !== targetMonth || currentYear !== targetYear) {
 
                             // cria no novo mês
                             await fetch(newPath, {
@@ -1489,7 +1507,87 @@
                     }
                 };
             },
+            renderMonthTransactions(categoryName) {
+                const container = document.getElementById('resumoGastoAnual');
+                const monthData = this.state.data.meses[this.state.selectedMonthIndex] || {};
 
+                const all = [];
+                let total = 0;
+
+                if (monthData.gastos?.categorias) {
+                    Object.entries(monthData.gastos.categorias).forEach(([cat, items]) => {
+
+                        // 🔥 FILTRA PELA CATEGORIA CLICADA
+                        if (cat.trim() === categoryName.trim()) {
+
+                            Object.entries(items).forEach(([id, t]) => {
+                                all.push({
+                                    ...t,
+                                    category: cat,
+                                    type: 'gastos'
+                                });
+
+                                total += t.valor || 0;
+                            });
+
+                        }
+                    });
+                }
+
+                if (all.length === 0) {
+                    container.innerHTML = `<div class="empty-state">Nenhum gasto nesta categoria neste mês</div>`;
+                    return;
+                }
+
+                // ordenar por data
+                all.sort((a, b) => {
+                    const dateA = this.parseDate(a.dia);
+                    const dateB = this.parseDate(b.dia);
+                    return this.state.sortOrder === 'desc' ? dateB - dateA : dateA - dateB;
+                });
+                const monthName = MONTHS[this.state.selectedMonthIndex];
+
+
+                const icon = this.state.sortOrder === 'desc' ? '▼ Mais Novas' : '▲ Mais Velhas';
+
+
+                container.innerHTML = `
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
+            <div>
+                <h4 style="margin:0;">${categoryName}</h4>
+                <div style="font-size: 12px; color: var(--text-secondary); font-weight: 500;">
+                Referente a ${monthName}
+            </div>
+                <button onclick="app.toggleSortOrder('${categoryName}')" 
+                        style="background:none; border:none; color:var(--primary); font-size:11px; padding:0; cursor:pointer; font-weight:600;">
+                    ${icon}
+                </button>
+            </div>
+            <div style="font-weight:bold; color:#ef4444; font-family:'Courier New', monospace;">
+                Total: ${this.formatCurrency(total)}
+        </div>
+    </div>
+    ` + all.map(t => `
+        <div class="transaction-item">
+            <div class="transaction-header">
+                <div>
+                    <div class="transaction-description">${t.descricao}</div>
+                    <div class="transaction-date">${t.dia}</div>
+                </div>
+                <div class="transaction-value expense-text">
+                    ${this.formatCurrency(t.valor)}
+                </div>
+            </div>
+        </div>
+    `).join('');
+
+            },
+            toggleSortOrder(categoryName) {
+                // Inverte a ordem: se for 'desc' vira 'asc', se for 'asc' vira 'desc'
+                this.state.sortOrder = (this.state.sortOrder === 'desc') ? 'asc' : 'desc';
+                // Chama a renderização novamente para aplicar a nova ordem
+                this.renderMonthTransactions(categoryName);
+            },
             openModal(type = null, category = null, id = null) {
                 this.state.editingId = id;
                 this.state.editingType = type;
@@ -1512,9 +1610,9 @@
                     document.getElementById('transactionDescription').value = t.descricao;
                     document.getElementById('transactionDate').value = this.formatDateForInput(t.dia);
                     // Formata o valor para o input ao editar (ex: 1234.56 -> "1.234,56")
-                    document.getElementById('transactionValue').value = (t.valor / 100).toLocaleString('pt-BR', { 
-                        minimumFractionDigits: 2, 
-                        maximumFractionDigits: 2 
+                    document.getElementById('transactionValue').value = (t.valor / 100).toLocaleString('pt-BR', {
+                        minimumFractionDigits: 2,
+                        maximumFractionDigits: 2
                     });
 
                     document.getElementById('recurrentGroup').classList.add('hidden');
