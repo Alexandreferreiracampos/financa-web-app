@@ -981,6 +981,7 @@
                 customCategories: { receita: [], gasto: [], pendente: [] },
                 charts: { category: null, monthly: null, annual: null, categoryAnnual: null },
                 sortOrder: 'desc',
+                openNew: true
             },
 
             async init() {
@@ -1900,6 +1901,12 @@
             showLoading(text) {
                 document.getElementById('loadingText').innerText = text;
                 document.getElementById('loadingOverlay').classList.add('active');
+                if(this.state.sortOrder){
+
+                      this.showToast('', 'success');
+                      this.state.sortOrder = false;
+
+                }
             },
 
             hideLoading() { document.getElementById('loadingOverlay').classList.remove('active'); },
