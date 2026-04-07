@@ -557,23 +557,30 @@
         }
 
         /* Toast */
-        .toast {
+        #toast {
             position: fixed;
-            top: 24px;
+            top: 50%;
             left: 50%;
-            transform: translateX(-50%) translateY(-100px);
+            transform: translate(-50%, -50%) scale(0.9);
+
             background: var(--primary);
             color: white;
-            padding: 12px 24px;
-            border-radius: 50px;
+            padding: 16px 24px;
+            border-radius: 12px;
             font-weight: 600;
-            z-index: 2000;
-            transition: 0.3s;
-            box-shadow: var(--shadow-lg);
+            text-align: center;
+
+            opacity: 0;
+            pointer-events: none;
+            transition: all 0.3s ease;
+
+            z-index: 9999;
         }
 
-        .toast.show {
-            transform: translateX(-50%) translateY(0);
+        /* quando aparecer */
+        #toast.show {
+            opacity: 1;
+            transform: translate(-50%, -50%) scale(1);
         }
 
         /* Loading */
@@ -862,6 +869,110 @@
         const CATEGORIES_PATH = '/configuracoes/categorias';
         const MONTHS = ['Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho', 'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'];
 
+        const mensagensAmor = [
+            "Você é a melhor parte do meu dia 💖",
+            "Sou muito grato por ter você na minha vida",
+            "Te amo mais do que palavras conseguem dizer",
+            "Você faz tudo ficar mais bonito",
+            "Meu mundo é melhor com você nele",
+            "Cada detalhe seu me encanta",
+            "Você é meu porto seguro",
+            "Seu sorriso é minha felicidade",
+            "Eu escolheria você mil vezes",
+            "Você é o amor da minha vida",
+            "Estar com você é tudo que eu preciso",
+            "Você ilumina meus dias",
+            "Te amar é a melhor coisa que me aconteceu",
+            "Você é minha paz em meio ao caos",
+            "Meu coração é completamente seu",
+            "Com você tudo faz sentido",
+            "Você é meu lugar favorito",
+            "Seu carinho é tudo pra mim",
+            "Você me faz querer ser melhor todos os dias",
+            "Você é minha inspiração",
+            "Meu amor por você só cresce",
+            "Você é meu sonho realizado",
+            "A vida é mais leve ao seu lado",
+            "Você é tudo que eu sempre quis",
+            "Te ter comigo é um privilégio",
+            "Você é minha alegria diária",
+            "Nada se compara ao seu amor",
+            "Você é minha melhor escolha",
+            "Eu amo cada momento com você",
+            "Você é meu presente todos os dias",
+            "Seu abraço é meu lugar seguro",
+            "Você é meu motivo de sorrir",
+            "Te amar é fácil demais",
+            "Você faz meu coração sorrir",
+            "Eu tenho sorte de ter você",
+            "Você é incrível",
+            "Seu amor me fortalece",
+            "Você é minha pessoa favorita",
+            "Com você tudo é melhor",
+            "Você é meu tudo ❤️"
+        ];
+
+
+        class MensagensRotativas {
+            constructor(mensagens) {
+                this.storageKey = 'mensagens_amor_estado';
+                this.original = mensagens;
+                this.carregar();
+            }
+
+            embaralhar(array) {
+                for (let i = array.length - 1; i > 0; i--) {
+                    const j = Math.floor(Math.random() * (i + 1));
+                    [array[i], array[j]] = [array[j], array[i]];
+                }
+                return array;
+            }
+
+            salvar() {
+                localStorage.setItem(this.storageKey, JSON.stringify({
+                    lista: this.lista,
+                    index: this.index
+                }));
+            }
+
+            carregar() {
+                const salvo = localStorage.getItem(this.storageKey);
+
+                if (salvo) {
+                    const dados = JSON.parse(salvo);
+
+                    // validação básica
+                    if (dados.lista && dados.lista.length === this.original.length) {
+                        this.lista = dados.lista;
+                        this.index = dados.index;
+                        return;
+                    }
+                }
+
+                // se não tiver salvo ou estiver inválido
+                this.reset();
+            }
+
+            reset() {
+                this.lista = this.embaralhar([...this.original]);
+                this.index = 0;
+                this.salvar();
+            }
+
+            proxima() {
+                if (this.index >= this.lista.length) {
+                    this.reset();
+                }
+
+                const msg = this.lista[this.index++];
+                this.salvar();
+                return msg;
+            }
+        }
+
+
+        // 👇 ADICIONE ISSO AQUI
+        const mensagensRotativas = new MensagensRotativas(mensagensAmor);
         const app = {
             state: {
                 selectedYear: null, selectedMonthIndex: null, data: null,
@@ -1517,7 +1628,7 @@
                 if (monthData.gastos?.categorias) {
                     Object.entries(monthData.gastos.categorias).forEach(([cat, items]) => {
 
-                        // 🔥 FILTRA PELA CATEGORIA CLICADA
+
                         if (cat.trim() === categoryName.trim()) {
 
                             Object.entries(items).forEach(([id, t]) => {
@@ -1583,9 +1694,9 @@
 
             },
             toggleSortOrder(categoryName) {
-                // Inverte a ordem: se for 'desc' vira 'asc', se for 'asc' vira 'desc'
+
                 this.state.sortOrder = (this.state.sortOrder === 'desc') ? 'asc' : 'desc';
-                // Chama a renderização novamente para aplicar a nova ordem
+
                 this.renderMonthTransactions(categoryName);
             },
             openModal(type = null, category = null, id = null) {
@@ -1609,7 +1720,7 @@
                     document.getElementById('transactionCategory').value = category;
                     document.getElementById('transactionDescription').value = t.descricao;
                     document.getElementById('transactionDate').value = this.formatDateForInput(t.dia);
-                    // Formata o valor para o input ao editar (ex: 1234.56 -> "1.234,56")
+
                     document.getElementById('transactionValue').value = (t.valor / 100).toLocaleString('pt-BR', {
                         minimumFractionDigits: 2,
                         maximumFractionDigits: 2
@@ -1622,11 +1733,11 @@
                     }
 
                 } else {
-                    // 🔥 RESET PRIMEIRO
+
                     document.getElementById('transactionForm').reset();
                     document.getElementById('transactionDate').valueAsDate = new Date();
 
-                    // 🔥 DEPOIS DEFINE O TIPO
+
                     const typeMap = {
                         receitas: 'receita',
                         gastos: 'gasto',
@@ -1639,7 +1750,6 @@
 
                     this.updateCategoryOptions();
 
-                    // 🔥 EXTRA (opcional, mas MUITO bom)
                     if (this.state.activeDetail) {
                         document.getElementById('transactionCategory').value = this.state.activeDetail.category;
                     }
@@ -1670,6 +1780,7 @@
                 await Promise.all(promises);
                 await this.loadYearData();
                 this.hideLoading();
+                this.showToast('Tudo pago!');
             },
 
             async markAsPaid(type, category, id) {
@@ -1680,6 +1791,7 @@
                 await fetch(`${FIREBASE_URL}${FIREBASE_PATH}/${this.state.selectedYear}/meses/${this.state.selectedMonthIndex}/pendentes/categorias/${encodedCat}/${id}.json`, { method: 'DELETE' });
                 await this.loadYearData();
                 this.hideLoading();
+                this.showToast('Pago com sucesso!');
             },
 
             async deleteTransaction(type, category, id) {
@@ -1689,6 +1801,8 @@
                 await fetch(`${FIREBASE_URL}${FIREBASE_PATH}/${this.state.selectedYear}/meses/${this.state.selectedMonthIndex}/${dataType}/categorias/${encodedCat}/${id}.json`, { method: 'DELETE' });
                 await this.loadYearData();
                 this.hideLoading();
+                
+                this.showToast('Excluído com sucesso!');
             },
 
             handleCategoryClick(event, type, category) {
@@ -1792,10 +1906,18 @@
 
             showToast(message, type = 'success') {
                 const toast = document.getElementById('toast');
+
+                // 🔥 Se for sucesso, mistura com mensagem de amor
+                if (type === 'success') {
+                    const msgAmor = mensagensRotativas.proxima();
+                    message = ` ❤️ ${msgAmor}`;
+                }
+
                 toast.innerText = message;
                 toast.style.background = type === 'success' ? 'var(--primary)' : 'var(--danger)';
                 toast.classList.add('show');
-                setTimeout(() => toast.classList.remove('show'), 3000);
+
+                setTimeout(() => toast.classList.remove('show'), 4000);
             }
         };
 
