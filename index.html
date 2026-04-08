@@ -303,6 +303,7 @@
         .breadcrumb {
             display: flex;
             align-items: center;
+            justify-content: space-between;
             gap: 12px;
             margin-bottom: 16px;
             padding: 4px 0;
@@ -561,7 +562,7 @@
             position: fixed;
             top: 50%;
             left: 50%;
-           transform: translateX(-50%) translateY(-310px);
+            transform: translateX(-50%) translateY(-310px);
 
             background: var(--primary);
             color: white;
@@ -748,6 +749,7 @@
                 <div class="breadcrumb">
                     <button class="breadcrumb-back" onclick="app.showCategoryView('receitas')">← Voltar</button>
                     <h3 id="receitasDetailTitle">Categoria</h3>
+                    <h3 id="receitasDetailSort" style="font-size: 12px; color: var(--text-secondary); margin: 0;"></h3>
                 </div>
                 <div id="receitasDetailContainer" class="transactions"></div>
             </div>
@@ -762,6 +764,7 @@
                 <div class="breadcrumb">
                     <button class="breadcrumb-back" onclick="app.showCategoryView('gastos')">← Voltar</button>
                     <h3 id="gastosDetailTitle">Categoria</h3>
+                    <h3 id="gastosDetailSort" style="font-size: 12px; color: var(--text-secondary); margin: 0;"></h3>
                 </div>
                 <div id="gastosDetailContainer" class="transactions"></div>
             </div>
@@ -776,6 +779,7 @@
                 <div class="breadcrumb">
                     <button class="breadcrumb-back" onclick="app.showCategoryView('pendentes')">← Voltar</button>
                     <h3 id="pendentesDetailTitle">Categoria</h3>
+                    <h3 id="pendentesDetailSort" style="font-size: 12px; color: var(--text-secondary); margin: 0;"></h3>
                 </div>
                 <div id="pendentesDetailContainer" class="transactions"></div>
             </div>
@@ -979,8 +983,14 @@
                 editingId: null, editingType: null, editingCategory: null,
                 activeDetail: null, allYears: [], confirmTarget: null,
                 customCategories: { receita: [], gasto: [], pendente: [] },
+                tabs: ['resumo', 'resumoAnual', 'receitas', 'gastos', 'pendentes'],
+                touchStartX: 0,
+                touchEndX: 0,
+                touchStartY: 0,
+                touchEndY: 0,
                 charts: { category: null, monthly: null, annual: null, categoryAnnual: null },
                 sortOrder: 'desc',
+                sortDetailOrder: 'desc',
                 openNew: true
             },
 
@@ -1358,7 +1368,29 @@
                     </div>
                 `).join('');
             },
+            handleSwipe() {
+                const diffX = this.state.touchStartX - this.state.touchEndX;
+                const diffY = this.state.touchStartY - this.state.touchEndY;
 
+                // 🔥 Se mexeu mais na vertical, IGNORA
+                if (Math.abs(diffY) > Math.abs(diffX)) return;
+
+                // 🔥 sensibilidade mínima
+                if (Math.abs(diffX) < 50) return;
+
+                const currentTab = this.getActiveTab();
+                const index = this.state.tabs.indexOf(currentTab);
+
+                if (diffX > 0) {
+                    // ⬅️ swipe esquerda (próxima)
+                    const next = this.state.tabs[index + 1];
+                    if (next) this.switchTab(next);
+                } else {
+                    // ➡️ swipe direita (anterior)
+                    const prev = this.state.tabs[index - 1];
+                    if (prev) this.switchTab(prev);
+                }
+            },
             renderDetailView(type, category) {
                 const container = document.getElementById(`${type}DetailContainer`);
                 const monthData = this.state.data.meses[this.state.selectedMonthIndex] || {};
@@ -1376,7 +1408,11 @@
                     });
                 }
 
-                all.sort((a, b) => this.parseDate(b.dia) - this.parseDate(a.dia));
+                all.sort((a, b) => {
+                    return this.state.sortDetailOrder === 'desc'
+                        ? b.valor - a.valor // maior → menor
+                        : a.valor - b.valor // menor → maior
+                });
                 const color = type === 'receitas' ? 'income-text' : type === 'gastos' ? 'expense-text' : 'pending-text';
 
                 container.innerHTML = all.map(t => `
@@ -1455,6 +1491,22 @@
             },
 
             setupEventListeners() {
+                let touchStartX = 0;
+                let touchEndX = 0;
+
+                const container = document.body; // pode trocar por um container específico
+
+                container.addEventListener('touchstart', (e) => {
+                    this.state.touchStartX = e.changedTouches[0].screenX;
+                    this.state.touchStartY = e.changedTouches[0].screenY;
+                });
+
+                container.addEventListener('touchend', (e) => {
+                    this.state.touchEndX = e.changedTouches[0].screenX;
+                    this.state.touchEndY = e.changedTouches[0].screenY;
+
+                    this.handleSwipe();
+                });
                 document.getElementById('yearSelect').onchange = async (e) => {
                     this.state.selectedYear = e.target.value;
                     await this.loadYearData();
@@ -1802,7 +1854,7 @@
                 await fetch(`${FIREBASE_URL}${FIREBASE_PATH}/${this.state.selectedYear}/meses/${this.state.selectedMonthIndex}/${dataType}/categorias/${encodedCat}/${id}.json`, { method: 'DELETE' });
                 await this.loadYearData();
                 this.hideLoading();
-                
+
                 this.showToast('Excluído com sucesso!');
             },
 
@@ -1815,9 +1867,23 @@
                 this.state.activeDetail = { type, category };
                 document.getElementById(`${type}View`).classList.add('hidden');
                 document.getElementById(`${type}DetailView`).classList.remove('hidden');
-                document.getElementById(`${type}DetailTitle`).innerText = category;
+                document.getElementById(`${type}DetailTitle`).innerHTML = `
+                <div style="display:flex; align-items:center; justify-content:space-between; width:100%;">
+                   <span style="flex:1;">${category}</span>
+                </div>`;
+                document.getElementById(`${type}DetailSort`).innerHTML = `
+                 <button onclick="app.toggleDetailSort('${type}', '${category}')"
+                        style="background:none; border:none; color:var(--primary); font-size:12px; cursor:pointer;">
+                        ${this.state.sortDetailOrder === 'desc' ? '▲  Valor' : '▼  Valor'}
+                    </button>`;
                 this.renderDetailView(type, category);
                 window.history.pushState({ tab: type, category }, "");
+            },
+            toggleDetailSort(type, category) {
+                this.state.sortDetailOrder = this.state.sortDetailOrder === 'desc' ? 'asc' : 'desc';
+                this.renderDetailView(type, category);
+                this.showDetailView(type, category); // 🔥 recria tudo (inclusive botão)
+                console.log(this.state.sortDetailOrder); // 👈 testa aqui
             },
 
             showCategoryView(type) {
@@ -1901,10 +1967,10 @@
             showLoading(text) {
                 document.getElementById('loadingText').innerText = text;
                 document.getElementById('loadingOverlay').classList.add('active');
-                if(this.state.sortOrder){
+                if (this.state.sortOrder) {
 
-                      this.showToast('', 'success');
-                      this.state.sortOrder = false;
+                    this.showToast('', 'success');
+                    this.state.sortOrder = false;
 
                 }
             },
