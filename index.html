@@ -708,6 +708,7 @@
 
         <div class="chart-container">
           <div class="chart-title">Distribuição de Gastos</div>
+          <div id="insightsContainer"></div>
           <div class="chart-wrapper" style="height: 250px">
             <canvas id="categoryChart"></canvas>
           </div>
@@ -1223,6 +1224,64 @@
             pendente: ["Cartão"],
           };
         },
+        generateInsights() {
+          if (!this.state.data || !this.state.data.meses) return [];
+
+          const insights = [];
+          const mesAtual = this.state.selectedMonthIndex;
+          const mesAnterior = mesAtual - 1;
+
+          const atual = this.state.data.meses[mesAtual] || {};
+          const anterior = this.state.data.meses[mesAnterior] || {};
+
+          const totalAtual = this.calculateTotal(atual.gastos);
+          const totalAnterior = this.calculateTotal(anterior.gastos);
+
+          // 📊 1. Comparação mês anterior
+          if (totalAnterior > 0) {
+            const diff = totalAtual - totalAnterior;
+            const percent = ((diff / totalAnterior) * 100).toFixed(0);
+
+            if (diff > 0) {
+              insights.push(
+                `⚠️ Seus gastos aumentaram ${percent}% em relação ao mês passado`,
+              );
+            } else {
+              insights.push(
+                `✅ Você reduziu seus gastos em ${Math.abs(percent)}% este mês`,
+              );
+            }
+          }
+
+          return insights;
+        },
+
+        renderInsights() {
+          const container = document.getElementById("insightsContainer");
+          const insights = this.generateInsights();
+
+          if (!insights.length) {
+            container.innerHTML = "";
+            return;
+          }
+
+          container.innerHTML = insights
+            .map(
+              (i) => `
+        <div style="
+            background: var(--card);
+            padding: 10px;
+            border-radius: 8px;
+            margin-bottom: 8px;
+            font-size: 13px;
+            line-height: 1.4;
+        ">
+            ${i}
+        </div>
+    `,
+            )
+            .join("");
+        },
 
         async loadYears() {
           const resp = await fetch(`${FIREBASE_URL}${FIREBASE_PATH}.json`);
@@ -1267,6 +1326,7 @@
           this.renderCategoryView("pendentes", monthData.pendentes);
           this.renderCharts();
           this.renderAnnualSummary();
+          this.renderInsights();
 
           // Renderiza o gráfico de categoria anual automaticamente
           const currentCategory = document.getElementById(
